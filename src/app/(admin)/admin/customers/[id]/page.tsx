@@ -1,4 +1,5 @@
 import { getPinnedMeasurementSchemas } from "@/server/repositories/measurement-schema";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { viewFields } from "@/server/repositories/views";
 import { requireAdminPage } from "@/lib/page-auth";
 import Link from "next/link";
@@ -317,45 +318,45 @@ export default async function CustomerDetailPage({
       {tab === "orders" && (
         <section className="paper-card overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-[14.5px]">
-              <thead>
-                <tr className="border-b border-ink/25 text-left">
+            <Table className="w-full min-w-[720px] text-[14.5px]">
+              <TableHeader>
+                <TableRow className="border-b border-ink/25 text-left">
                   {["অর্ডার নং", "পোশাক", "স্ট্যাটাস", "অর্ডার", "ডেলিভারি", "মোট", "বকেয়া"].map((h) => (
-                    <th key={h} className="smallcaps px-4 py-2.5 font-medium text-stone">
+                    <TableHead key={h} className="smallcaps px-4 py-2.5 font-medium text-stone">
                       {h}
-                    </th>
+                    </TableHead>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {custOrders.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-ink-3">
+                  <TableRow>
+                    <TableCell colSpan={7} className="px-4 py-10 text-center text-ink-3">
                       কোনো অর্ডার নেই।
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
                 {custOrders.map(({ o }) => (
-                  <tr key={o.id} className="ledger-row">
-                    <td className="px-4 py-3">
+                  <TableRow key={o.id} className="ledger-row">
+                    <TableCell className="px-4 py-3">
                       <Link href={`/admin/orders/${o.id}`} className="chalk-link num">
                         {o.orderNo}
                       </Link>
-                    </td>
-                    <td className="px-4 py-3 text-ink-3">{(itemsByOrder.get(o.id) ?? []).join(", ")}</td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-ink-3">{(itemsByOrder.get(o.id) ?? []).join(", ")}</TableCell>
+                    <TableCell className="px-4 py-3">
                       <StatusBadge status={o.status} />
-                    </td>
-                    <td className="num px-4 py-3 text-ink-3">{dateShort(o.orderDate)}</td>
-                    <td className="num px-4 py-3">{dateShort(o.deliveryDate)}</td>
-                    <td className="num px-4 py-3">{Number(o.total).toLocaleString("en-US")}</td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell className="num px-4 py-3 text-ink-3">{dateShort(o.orderDate)}</TableCell>
+                    <TableCell className="num px-4 py-3">{dateShort(o.deliveryDate)}</TableCell>
+                    <TableCell className="num px-4 py-3">{Number(o.total).toLocaleString("en-US")}</TableCell>
+                    <TableCell className="px-4 py-3">
                       {Number(o.dueAmount) > 0 ? <DueBadge due={o.dueAmount} /> : <span className="text-stone">—</span>}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </section>
       )}

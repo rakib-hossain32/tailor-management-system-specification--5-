@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, MapPin, PhoneCall } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,8 +18,7 @@ export function HomeVisitCTA({ section, shop }: { section?: PublicSection; shop:
       <div className="relative mx-auto max-w-[1280px] overflow-hidden rounded-[2rem] bg-ink text-paper shadow-[0_30px_60px_-30px_rgba(15,26,44,0.5)]">
         {bg && (
           <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={bg} alt="" className="absolute inset-0 h-full w-full object-cover opacity-35" />
+            <Image src={bg} alt="" fill sizes="(max-width: 1280px) 100vw, 1280px" className="object-cover opacity-35" />
             <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/85 to-ink/40" aria-hidden />
           </>
         )}

@@ -1,4 +1,5 @@
 import { viewFields } from "@/server/repositories/views";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { requireAdminPage } from "@/lib/page-auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -138,58 +139,58 @@ export default async function WorkerDetailPage({ params }: { params: Promise<{ i
             <h2 className="text-xl">কাজের ইতিহাস ({taskRows.length})</h2>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-[14.5px]">
-              <thead>
-                <tr className="border-b border-ink/25 text-left">
+            <Table className="w-full min-w-[720px] text-[14.5px]">
+              <TableHeader>
+                <TableRow className="border-b border-ink/25 text-left">
                   {["অর্ডার", "পোশাক", "ধাপ", "পরিমাণ", "ডেলিভারি", "স্ট্যাটাস", "রেট"].map((h) => (
-                    <th key={h} className="smallcaps px-4 py-2.5 font-medium text-stone">
+                    <TableHead key={h} className="smallcaps px-4 py-2.5 font-medium text-stone">
                       {h}
-                    </th>
+                    </TableHead>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {taskRows.length === 0 && (
-                  <tr>
-                    <td colSpan={7}>
+                  <TableRow>
+                    <TableCell colSpan={7}>
                       <Empty>এখনো কোনো কাজ পাওয়া যায়নি।</Empty>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
                 {taskRows.map(({ t, orderId, orderNo, delivery, orderStatus, garment, qty }) => {
                   const st = STATUS_BN[t.status] ?? STATUS_BN.assigned;
                   const late = isOverdue(orderStatus, delivery);
                   return (
-                    <tr key={t.id} className="ledger-row">
-                      <td className="code px-4 py-3">
+                    <TableRow key={t.id} className="ledger-row">
+                      <TableCell className="code px-4 py-3">
                         <Link href={`/admin/orders/${orderId}`} className="chalk-link">
                           {orderNo.slice(-7)}
                         </Link>
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
                         {garment} <span className="num text-stone">×{qty}</span>
-                      </td>
-                      <td className="px-4 py-3 text-ink-3">{STAGE_BN[t.stage]}</td>
-                      <td className="px-4 py-3 text-ink-3">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-ink-3">{STAGE_BN[t.stage]}</TableCell>
+                      <TableCell className="px-4 py-3 text-ink-3">
                         {t.completedAt ? dateShort(t.completedAt) : "—"}
-                      </td>
-                      <td className={`num px-4 py-3 ${late ? "text-chalk" : "text-ink-3"}`}>
+                      </TableCell>
+                      <TableCell className={`num px-4 py-3 ${late ? "text-chalk" : "text-ink-3"}`}>
                         {dateShort(delivery)}
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
                         <span
                           className="rounded-full px-2.5 py-0.5 text-[13px]"
                           style={{ color: st.fg, backgroundColor: st.bg }}
                         >
                           {st.label}
                         </span>
-                      </td>
-                      <td className="num px-4 py-3">৳{Number(t.pieceRate ?? 0)}</td>
-                    </tr>
+                      </TableCell>
+                      <TableCell className="num px-4 py-3">৳{Number(t.pieceRate ?? 0)}</TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </section>
 

@@ -1,4 +1,5 @@
 import { viewFields } from "@/server/repositories/views";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { requireAdminPage } from "@/lib/page-auth";
 import Link from "next/link";
 import { asc, eq, sql } from "drizzle-orm";
@@ -92,57 +93,57 @@ export default async function PayrollPage() {
           </p>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-[15px]">
-            <thead>
-              <tr className="border-b border-ink text-left">
+          <Table className="w-full min-w-[760px] text-[15px]">
+            <TableHeader>
+              <TableRow className="border-b border-ink text-left">
                 {["কারিগর", "ধারা", "পাস", "রিওয়ার্ক", "চলমান", "জমা মজুরি", "চলমান মূল্য", "স্বাক্ষর"].map((h) => (
-                  <th key={h} className="smallcaps px-4 py-3 font-medium text-stone">
+                  <TableHead key={h} className="smallcaps px-4 py-3 font-medium text-stone">
                     {h}
-                  </th>
+                  </TableHead>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {rows.length === 0 && (
-                <tr>
-                  <td colSpan={8}>
+                <TableRow>
+                  <TableCell colSpan={8}>
                     <Empty>কোনো কারিগর নেই।</Empty>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
               {rows.map((r) => (
-                <tr key={r.w.id} className="ledger-row">
-                  <td className="px-4 py-3.5">
+                <TableRow key={r.w.id} className="ledger-row">
+                  <TableCell className="px-4 py-3.5">
                     <Link href={`/admin/workers/${r.w.id}`} className="chalk-link font-medium">
                       {r.w.name}
                     </Link>
                     <span className="block text-[13px] text-stone">
                       {r.w.role === "cutting" ? "কাটার" : r.w.role === "stitching" ? "সেলাই" : "ফিনিশার"}
                     </span>
-                  </td>
-                  <td className="px-4 py-3.5 text-ink-3">{r.w.payType === "piece_rate" ? "পিস-রেট" : "বেতন"}</td>
-                  <td className="num px-4 py-3.5">{r.passed}</td>
-                  <td className={`num px-4 py-3.5 ${r.rework ? "text-chalk" : "text-ink-3"}`}>{r.rework}</td>
-                  <td className="num px-4 py-3.5 text-ink-3">{r.open}</td>
-                  <td className="num px-4 py-3.5 font-semibold">{taka(r.earned)}</td>
-                  <td className="num px-4 py-3.5 text-ink-3">{taka(r.pending)}</td>
-                  <td className="px-4 py-3.5">
+                  </TableCell>
+                  <TableCell className="px-4 py-3.5 text-ink-3">{r.w.payType === "piece_rate" ? "পিস-রেট" : "বেতন"}</TableCell>
+                  <TableCell className="num px-4 py-3.5">{r.passed}</TableCell>
+                  <TableCell className={`num px-4 py-3.5 ${r.rework ? "text-chalk" : "text-ink-3"}`}>{r.rework}</TableCell>
+                  <TableCell className="num px-4 py-3.5 text-ink-3">{r.open}</TableCell>
+                  <TableCell className="num px-4 py-3.5 font-semibold">{taka(r.earned)}</TableCell>
+                  <TableCell className="num px-4 py-3.5 text-ink-3">{taka(r.pending)}</TableCell>
+                  <TableCell className="px-4 py-3.5">
                     <span className="block h-8 w-24 border-b border-dashed border-stone" />
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-            <tfoot>
-              <tr className="border-t-2 border-ink">
-                <td colSpan={5} className="px-4 py-3 text-right font-medium">
+            </TableBody>
+            <TableFooter>
+              <TableRow className="border-t-2 border-ink">
+                <TableCell colSpan={5} className="px-4 py-3 text-right font-medium">
                   সর্বমোট
-                </td>
-                <td className="num px-4 py-3 text-[17px] font-semibold">{taka(grandEarned)}</td>
-                <td className="num px-4 py-3 text-[17px]">{taka(grandPending)}</td>
-                <td />
-              </tr>
-            </tfoot>
-          </table>
+                </TableCell>
+                <TableCell className="num px-4 py-3 text-[17px] font-semibold">{taka(grandEarned)}</TableCell>
+                <TableCell className="num px-4 py-3 text-[17px]">{taka(grandPending)}</TableCell>
+                <TableCell />
+              </TableRow>
+            </TableFooter>
+          </Table>
         </div>
       </section>
 

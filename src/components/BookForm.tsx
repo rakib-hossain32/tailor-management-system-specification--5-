@@ -285,7 +285,7 @@ export function BookForm({
                         aria-pressed={active}
                         className="flex min-h-11 w-full items-center justify-start gap-3 rounded-md px-2.5 py-2 text-left text-base font-normal hover:bg-gold-light/50"
                       >
-                        <Checkbox checked={active} className="pointer-events-none" aria-hidden tabIndex={-1} />
+                        <span aria-hidden className={`flex size-4 shrink-0 items-center justify-center rounded-[4px] border ${active ? "border-gold-dark bg-gold text-ink" : "border-ink/40 bg-paper"}`}>{active && <Check className="size-3" />}</span>
                         <span className="flex-1">{garment.nameBn}</span>
                         {active && <Check className="size-4 shrink-0 text-gold-dark" />}
                       </Button>
@@ -368,14 +368,15 @@ export function BookForm({
 
       <Separator />
 
-      <label className="flex min-h-11 cursor-pointer items-center gap-2.5 text-[15px]">
+      <Label htmlFor="bk-home-visit" className="flex min-h-11 cursor-pointer items-center gap-2.5 text-[15px]">
         <Checkbox
+          id="bk-home-visit"
           checked={homeVisit}
           onCheckedChange={(v) => setHomeVisit(v === true)}
           aria-label="হোম ভিজিট"
         />
         হোম ভিজিটের অনুরোধ
-      </label>
+      </Label>
 
       {homeVisit && (
         <div className="space-y-1.5">
@@ -420,7 +421,7 @@ export function BookForm({
             <div className="mt-3 rounded-md border border-gold/50 bg-gold-light/40 p-4">
               <div className="smallcaps text-gold-dark">অ্যাপয়েন্টমেন্ট কার্ড</div>
               <p className="mt-1 text-[14.5px] text-ink-3">
-                কার্ডে আপনার নাম, ফোন, তারিখ-সময়, উদ্দেশ্য এবং দোকানে স্ক্যান করার QR থাকবে। বাটনে ক্লিক করলেই PDF সরাসরি ডাউনলোড হবে — কোনো প্রিভিউ পেজে যাবে না।
+                কার্ডে আপনার নাম, ফোন, তারিখ-সময়, উদ্দেশ্য এবং দোকানে স্ক্যান করার বারকোড থাকবে। বাটনে ক্লিক করলেই PDF সরাসরি ডাউনলোড হবে — কোনো প্রিভিউ পেজে যাবে না।
               </p>
               <div className="mt-3 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
                 <Button asChild variant="gold" className="min-h-11">

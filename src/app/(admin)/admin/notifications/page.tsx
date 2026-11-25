@@ -1,4 +1,5 @@
 import { requireAdminPage } from "@/lib/page-auth";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { notifications, orders } from "@/db/schema";
@@ -117,48 +118,48 @@ export default async function NotificationsPage() {
             <h2 className="text-xl">সাম্প্রতিক বার্তা</h2>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-[14.5px]">
-              <thead>
-                <tr className="border-b border-ink/25 text-left">
+            <Table className="w-full min-w-[720px] text-[14.5px]">
+              <TableHeader>
+                <TableRow className="border-b border-ink/25 text-left">
                   {["ইভেন্ট", "প্রাপক", "বার্তা", "স্ট্যাটাস", "সময়"].map((h) => (
-                    <th key={h} className="smallcaps px-4 py-2.5 font-medium text-stone">
+                    <TableHead key={h} className="smallcaps px-4 py-2.5 font-medium text-stone">
                       {h}
-                    </th>
+                    </TableHead>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {rows.length === 0 && (
-                  <tr>
-                    <td colSpan={5}>
+                  <TableRow>
+                    <TableCell colSpan={5}>
                       <Empty>কোনো বার্তা পাঠানো হয়নি।</Empty>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
                 {rows.map(({ n, orderNo }) => {
                   const st = STATUS_BN[n.status] ?? STATUS_BN.queued;
                   return (
-                    <tr key={n.id} className="ledger-row align-top">
-                      <td className="px-4 py-3">
+                    <TableRow key={n.id} className="ledger-row align-top">
+                      <TableCell className="px-4 py-3">
                         <span className="code text-[13px] text-stone">{n.templateCode}</span>
                         {orderNo && <span className="code block text-[13px]">{orderNo}</span>}
-                      </td>
-                      <td className="num px-4 py-3 text-ink-3">{n.recipient}</td>
-                      <td className="px-4 py-3 text-[14px] text-ink-2">
+                      </TableCell>
+                      <TableCell className="num px-4 py-3 text-ink-3">{n.recipient}</TableCell>
+                      <TableCell className="px-4 py-3 text-[14px] text-ink-2">
                         {n.body}
                         <span className="mt-1 block text-[12px] text-stone">
                           {n.body.length} অক্রিষ্ট · {segments(n.body)} সেগমেন্ট
                         </span>
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
                         <span
                           className="rounded-full px-2.5 py-0.5 text-[13px]"
                           style={{ color: st.fg, backgroundColor: st.bg }}
                         >
                           {st.label}
                         </span>
-                      </td>
-                      <td className="num px-4 py-3 text-[13px] text-stone">
+                      </TableCell>
+                      <TableCell className="num px-4 py-3 text-[13px] text-stone">
                         {n.sentAt
                           ? new Date(n.sentAt).toLocaleString("en-GB", {
                               timeZone: "Asia/Dhaka",
@@ -168,12 +169,12 @@ export default async function NotificationsPage() {
                               minute: "2-digit",
                             })
                           : "—"}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </section>
 

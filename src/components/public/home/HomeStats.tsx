@@ -20,7 +20,7 @@ export function HomeStats({ sections }: { sections: PublicSection[] }) {
             } ${index === 2 ? "lg:border-l-0" : ""}`}
           >
             <dt className="order-2 mt-2.5 text-[13px] leading-snug text-ink-3">{section.heading}</dt>
-            <dd className="order-1 text-[34px] font-semibold leading-none tracking-tight text-ink sm:text-[42px]">
+            <dd className="num order-1 text-[34px] font-semibold leading-none tracking-tight text-ink sm:text-[42px]">
               {section.label}
               <span className="ml-2 inline-block h-1.5 w-1.5 rounded-full bg-gold align-middle" aria-hidden />
             </dd>

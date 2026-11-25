@@ -1,4 +1,5 @@
 import { viewFields } from "@/server/repositories/views";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { requireAdminPage } from "@/lib/page-auth";
 import Link from "next/link";
 import { asc, eq, sql } from "drizzle-orm";
@@ -78,65 +79,65 @@ export default async function OverduePage() {
             <span className="num text-[15px] text-stone">{section.list.length}টি</span>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[860px] text-[14.5px]">
-              <thead>
-                <tr className="border-b border-ink/25 text-left">
+            <Table className="w-full min-w-[860px] text-[14.5px]">
+              <TableHeader>
+                <TableRow className="border-b border-ink/25 text-left">
                   {["অর্ডার নং", "কাস্টমার", "পোশাক", "স্ট্যাটাস", "ডেলিভারি", "বকেয়া", "অ্যাকশন"].map((h) => (
-                    <th key={h} className="smallcaps px-4 py-2.5 font-medium text-stone">
+                    <TableHead key={h} className="smallcaps px-4 py-2.5 font-medium text-stone">
                       {h}
-                    </th>
+                    </TableHead>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {section.list.length === 0 && (
-                  <tr>
-                    <td colSpan={7}>
+                  <TableRow>
+                    <TableCell colSpan={7}>
                       <Empty>
                         {section.key === "late" ? "✓ কোনো অর্ডার দেরিতে নেই।" : "আগামী ৩ দিনে ডেলিভারি নেই।"}
                       </Empty>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
                 {section.list.map(({ o, c }) => {
                   const d = daysUntil(o.deliveryDate);
                   return (
-                    <tr key={o.id} className="ledger-row align-top">
-                      <td className="px-4 py-3">
+                    <TableRow key={o.id} className="ledger-row align-top">
+                      <TableCell className="px-4 py-3">
                         <Link href={`/admin/orders/${o.id}`} className="chalk-link num">
                           {o.orderNo}
                         </Link>
                         <div className="mt-1">
                           {o.priority === "urgent" && <UrgentBadge />}
                         </div>
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
                         {c.name}
                         <span className="num block text-[12.5px] text-stone">{c.phone.replace("+88", "")}</span>
-                      </td>
-                      <td className="px-4 py-3 text-ink-3">{(byOrder.get(o.id) ?? []).join(", ")}</td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-ink-3">{(byOrder.get(o.id) ?? []).join(", ")}</TableCell>
+                      <TableCell className="px-4 py-3">
                         <StatusBadge status={o.status} />
-                      </td>
-                      <td className={`px-4 py-3 ${section.key === "late" ? "text-chalk" : ""}`}>
+                      </TableCell>
+                      <TableCell className={`px-4 py-3 ${section.key === "late" ? "text-chalk" : ""}`}>
                         <span className="num">{dateShort(o.deliveryDate)}</span>
                         <span className="block text-[12.5px]">
                           {section.key === "late"
                             ? `${Math.abs(d ?? 0)} দিন দেরি`
                             : relativeDay(o.deliveryDate)}
                         </span>
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
                         {Number(o.dueAmount) > 0 ? <DueBadge due={o.dueAmount} /> : <span className="text-stone">—</span>}
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
                         <QuickStatus orderId={o.id} current={o.status} due={Number(o.dueAmount)} />
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </section>
       ))}
