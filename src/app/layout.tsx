@@ -18,10 +18,13 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 const fontLinks = [
-  // Two typefaces, by the owner's decision: Hind Siliguri for all writing
-  // (Bengali + Latin, weights 300–700) and IBM Plex Mono only for data
-  // figures (.num — order numbers, dates, prices, measurements).
-  "https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap",
+  // Three typefaces, by the owner's decision:
+  //  - Hind Siliguri — all writing (headings, body, labels, UI).
+  //  - Tiro Bangla — every displayed number (.num): Bengali digits,
+  //    dates, prices, measurements, phone numbers.
+  //  - IBM Plex Mono — English/Latin data only (.code): order numbers
+  //    and other Latin alphanumeric codes.
+  "https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Tiro+Bangla:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&display=swap",
 ];
 
 export default async function RootLayout({

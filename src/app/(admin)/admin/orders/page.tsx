@@ -233,7 +233,7 @@ export default async function OrdersPage({
                 return (
                   <TableRow key={o.id}>
                     <TableCell>
-                      <Link href={`/admin/orders/${o.id}`} className="chalk-link num font-medium">
+                      <Link href={`/admin/orders/${o.id}`} className="chalk-link code font-medium">
                         {o.orderNo}
                       </Link>
                       <div className="mt-1 flex gap-1.5">

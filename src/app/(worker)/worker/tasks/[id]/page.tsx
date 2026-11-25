@@ -84,7 +84,7 @@ export default async function WorkerTaskPage({ params }: { params: Promise<{ id:
           </span>
         </div>
         <p className="mt-3 text-[17px] text-ink-3">
-          অর্ডার <span className="num">{r.orderNo}</span>
+          অর্ডার <span className="code">{r.orderNo}</span>
           {profile && <> · মাপ: {profile.displayName}</>} · {r.w?.name ?? "অনির্ধারিত"}
         </p>
         {r.notes && <p className="mt-2 text-[16px]">নোট: {r.notes}</p>}

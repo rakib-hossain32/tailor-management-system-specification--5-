@@ -140,8 +140,8 @@ export default async function NotificationsPage() {
                   return (
                     <tr key={n.id} className="ledger-row align-top">
                       <td className="px-4 py-3">
-                        <span className="num text-[13px] text-stone">{n.templateCode}</span>
-                        {orderNo && <span className="num block text-[13px]">{orderNo}</span>}
+                        <span className="code text-[13px] text-stone">{n.templateCode}</span>
+                        {orderNo && <span className="code block text-[13px]">{orderNo}</span>}
                       </td>
                       <td className="num px-4 py-3 text-ink-3">{n.recipient}</td>
                       <td className="px-4 py-3 text-[14px] text-ink-2">
@@ -199,7 +199,7 @@ export default async function NotificationsPage() {
                   </span>
                 </div>
                 <p className="mt-1.5 text-[14px] text-ink-3">{t.body}</p>
-                <div className="num mt-1 text-[12px] text-stone">
+                <div className="code mt-1 text-[12px] text-stone">
                   {t.code} · {t.body.length} অক্রিষ্ট · {segments(t.body)} সেগমেন্ট
                 </div>
               </li>

@@ -341,7 +341,7 @@ export default async function DashboardPage({
                 return (
                   <TableRow key={t.id}>
                     <TableCell>
-                      <Link href={`/admin/orders/${orderId}`} className="chalk-link num font-medium">
+                      <Link href={`/admin/orders/${orderId}`} className="chalk-link code font-medium">
                         {orderNo}
                       </Link>
                       <span className="ml-2 text-ink-3">
@@ -452,7 +452,7 @@ export default async function DashboardPage({
                   return (
                     <TableRow key={o.id}>
                       <TableCell>
-                        <Link href={`/admin/orders/${o.id}`} className="chalk-link num font-medium text-ink">
+                        <Link href={`/admin/orders/${o.id}`} className="chalk-link code font-medium text-ink">
                           {o.orderNo}
                         </Link>
                         <div className="mt-1 flex gap-1.5">
@@ -546,7 +546,7 @@ export default async function DashboardPage({
                   <li key={f.id} className="flex items-center gap-3 py-2.5 text-[14.5px]">
                     <span className="flex-1">
                       {f.name}
-                      <span className="num ml-2 text-[12.5px] text-stone">{f.code}</span>
+                      <span className="code ml-2 text-[12.5px] text-stone">{f.code}</span>
                     </span>
                     <Badge variant="destructive" className="num">
                       {Number(f.stockQty)} {f.unit === "yard" ? "গজ" : "মিটার"}

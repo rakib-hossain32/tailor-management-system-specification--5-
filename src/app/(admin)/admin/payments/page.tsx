@@ -199,9 +199,9 @@ export default async function PaymentsPage() {
                     </div>
                     <div className="mt-0.5 flex flex-wrap gap-x-2 text-[13px] text-ink-3">
                       <span>{customer}</span>
-                      {orderNo && <span className="num">{orderNo}</span>}
+                      {orderNo && <span className="code">{orderNo}</span>}
                       <span>{METHOD_BN[p.method] ?? p.method}</span>
-                      <span className="num">{p.receiptNo}</span>
+                      <span className="code">{p.receiptNo}</span>
                     </div>
                   </li>
                 ))}

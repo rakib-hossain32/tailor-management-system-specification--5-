@@ -123,7 +123,7 @@ export default async function OrderDetailPage({
         <div className="flex flex-wrap items-start justify-between gap-5">
           <div>
             <div className="flex flex-wrap items-center gap-3">
-              <span className="num text-[26px] font-semibold sm:text-[30px]">{o.orderNo}</span>
+              <span className="code text-[26px] font-semibold sm:text-[30px]">{o.orderNo}</span>
               <StatusBadge status={o.status} size="md" />
               {o.priority === "urgent" && <UrgentBadge />}
               {o.source === "online" && <Badge variant="gold">অনলাইন অনুরোধ</Badge>}
@@ -471,7 +471,7 @@ export default async function OrderDetailPage({
               </div>
               <div className="flex justify-between gap-3 border-b border-dashed border-stone/40 pb-1.5">
                 <dt className="text-ink-3">ট্র্যাকিং টোকেন</dt>
-                <dd className="num text-[13px]">{o.trackingToken.slice(0, 8)}…</dd>
+                <dd className="code text-[13px]">{o.trackingToken.slice(0, 8)}…</dd>
               </div>
               <div className="flex justify-between gap-3">
                 <dt className="text-ink-3">সর্বশেষ আপডেট</dt>

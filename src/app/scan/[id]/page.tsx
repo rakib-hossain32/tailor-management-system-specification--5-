@@ -176,7 +176,7 @@ export default async function ScanPage({
           <CardContent className="space-y-2.5">
             {customerOrders.map((o) => (
               <div key={o.id} className="flex flex-wrap items-center gap-3 rounded-md border border-ink/10 px-3.5 py-2.5">
-                <span className="num font-medium">{o.orderNo}</span>
+                <span className="code font-medium">{o.orderNo}</span>
                 <Badge variant="outline">{statusMeta(o.status).labelBn}</Badge>
                 <span className="text-sm text-ink-3">
                   ডেলিভারি: {dateBn(o.deliveryDate)}

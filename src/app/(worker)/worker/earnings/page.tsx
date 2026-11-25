@@ -104,7 +104,7 @@ export default async function WorkerEarnings() {
             <li key={t.id} className="flex flex-wrap items-center gap-3 px-5 py-3 text-[16px]">
               <span className="rounded-sm border border-ink/25 px-2.5 py-1 text-[14.5px]">{STAGE_BN[t.stage]}</span>
               <span className="font-medium">{garment}</span>
-              <span className="num text-[14.5px] text-stone">{orderNo.slice(-7)}</span>
+              <span className="code text-[14.5px] text-stone">{orderNo.slice(-7)}</span>
               <span className="text-[14.5px] text-stone">ডেডলাইন {dateShort(delivery)}</span>
               <span
                 className={`ml-auto rounded-full px-3 py-1 text-[14px] ${

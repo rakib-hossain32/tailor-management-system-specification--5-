@@ -25,14 +25,17 @@
   --color-chalk: #b23a2e;
   --color-chalk-light: #fbe3df;
 
-  /* Two typefaces, by the owner's decision:
+  /* Three typefaces, by the owner's decision:
      - Hind Siliguri for ALL writing (headings, body, labels, UI).
-     - IBM Plex Mono ONLY for data figures via .num — order numbers,
-       dates, prices, measurements, phone numbers — so digits align in
-       tables. It has no Bengali glyphs, so any Bengali character inside
-       .num falls back to Hind Siliguri (listed second, deliberately). */
+     - Tiro Bangla for every displayed NUMBER via .num — Bengali digits,
+       dates, months, prices, measurements, phone numbers. Tiro Bangla
+       carries full Bengali glyphs, so a date like "২৬ নভেম্বর ২০২৬"
+       renders in one face end to end.
+     - IBM Plex Mono ONLY for English/Latin data via .code — order
+       numbers (TP-…) and other Latin alphanumeric codes. */
   --font-display: "Hind Siliguri", "Noto Sans Bengali", system-ui, sans-serif;
   --font-sans: "Hind Siliguri", "Noto Sans Bengali", system-ui, sans-serif;
+  --font-num: "Tiro Bangla", "Hind Siliguri", "Noto Sans Bengali", serif;
   --font-mono: "IBM Plex Mono", "Hind Siliguri", "Noto Sans Bengali", ui-monospace, monospace;
 }
 
@@ -120,6 +123,13 @@
 }
 
 .num {
+  /* Every displayed number — Tiro Bangla (owner's decision). */
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+}
+
+.code {
+  /* English/Latin data only — order numbers and codes, IBM Plex Mono. */
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
 }

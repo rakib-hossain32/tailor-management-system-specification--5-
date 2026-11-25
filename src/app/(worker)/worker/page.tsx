@@ -218,7 +218,7 @@ export default async function WorkerHome({
                       <h2 className="mt-2 text-[24px] leading-tight">
                         {garment} <span className="num text-[18px] text-stone">×{qty}</span>
                       </h2>
-                      <p className="num mt-1 text-[14.5px] text-ink-3">
+                      <p className="code mt-1 text-[14.5px] text-ink-3">
                         অর্ডার {orderNo}
                       </p>
                     </div>

@@ -97,7 +97,7 @@ export function LoginForm() {
               inputMode="numeric"
               autoComplete="one-time-code"
               placeholder="------"
-              className="num text-[26px] tracking-[0.4em]"
+              className="code text-[26px] tracking-[0.4em]"
             />
           </div>
           <Button type="submit" variant="gold" size="lg" className="w-full" disabled={busy || code.length !== 6}>

@@ -203,7 +203,7 @@ export default async function SettingsPage({
                 const fields = flattenFields(schema);
                 return (
                   <TableRow key={g.id}>
-                    <TableCell className="num text-stone">{g.code}</TableCell>
+                    <TableCell className="code text-stone">{g.code}</TableCell>
                     <TableCell className="font-medium">{g.nameBn}</TableCell>
                     <TableCell className="text-ink-3">{g.category}</TableCell>
                     <TableCell>
