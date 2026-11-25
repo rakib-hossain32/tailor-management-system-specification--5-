@@ -36,7 +36,7 @@
   --font-display: "Tiro Digits", "Hind Siliguri", "Noto Sans Bengali", system-ui, sans-serif;
   --font-sans: "Tiro Digits", "Hind Siliguri", "Noto Sans Bengali", system-ui, sans-serif;
   --font-num: "Tiro Bangla", "Hind Siliguri", "Noto Sans Bengali", serif;
-  --font-mono: "IBM Plex Mono", "Hind Siliguri", "Noto Sans Bengali", ui-monospace, monospace;
+  --font-mono: "Tiro Digits BN", "IBM Plex Mono", "Hind Siliguri", "Noto Sans Bengali", ui-monospace, monospace;
 }
 
 /* "Tiro Digits" — a digits-only face carved out of Tiro Bangla via
@@ -46,8 +46,10 @@
    text nobody remembered to wrap in .num — renders in Tiro Bangla,
    while letters fall through to Hind Siliguri. This is what makes the
    three-font rule hold on every page by construction, not by hoping
-   each value was wrapped by hand. (.code / --font-mono deliberately
-   does NOT include it: Latin codes keep IBM Plex Mono digits.) */
+   each value was wrapped by hand. (.code / --font-mono keeps Latin
+   digits in IBM Plex Mono; its stack instead leads with the
+   Bengali-only "Tiro Digits BN" face below, so Bengali digits are
+   Tiro Bangla even inside mono contexts.) */
 @font-face {
   font-family: "Tiro Digits";
   src: url("https://fonts.gstatic.com/s/tirobangla/v8/IFSgHe1Tm95E3O8b5i2V8PGo80Luuw.woff2") format("woff2");
@@ -63,6 +65,20 @@
   font-style: normal;
   font-display: swap;
   unicode-range: U+0030-0039;
+}
+
+/* Bengali-digits-only Tiro face for the MONO stack: it sits first in
+   --font-mono, but its unicode-range covers ONLY Bengali digits and
+   the taka sign — so a Bengali digit that ever lands inside a .code /
+   mono context still renders Tiro Bangla, while Latin digits and
+   letters skip it and keep IBM Plex Mono, exactly per the rule. */
+@font-face {
+  font-family: "Tiro Digits BN";
+  src: url("https://fonts.gstatic.com/s/tirobangla/v8/IFSgHe1Tm95E3O8b5i2V8PGo80Luuw.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+09E6-09EF, U+09F3-09FA;
 }
 
 @layer base {

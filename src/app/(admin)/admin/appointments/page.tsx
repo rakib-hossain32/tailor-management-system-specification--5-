@@ -1,8 +1,9 @@
 import { requireAdminPage } from "@/lib/page-auth";
 import Link from "next/link";
-import { and, eq, gte, lt } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { appointments, garmentTypes } from "@/db/schema";
+import { listAppointmentsForDay, listUpcomingAppointments } from "@/server/services/appointment-lists";
 import { PageHead, Empty } from "@/components/admin/PageHead";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -59,7 +60,12 @@ export default async function AppointmentsPage({
 }) {
   await requireAdminPage();
   const sp = await searchParams;
-  const date = sp.date && /^\d{4}-\d{2}-\d{2}$/.test(sp.date) ? sp.date : isoDate(startOfToday());
+  // Default view (no ?date=) is UPCOMING — everything from today
+  // onward — because customers book for future days; a today-only
+  // default made fresh bookings look lost. A specific day is shown
+  // only when one is picked in the day navigator.
+  const dayMode = Boolean(sp.date && /^\d{4}-\d{2}-\d{2}$/.test(sp.date));
+  const date = dayMode ? (sp.date as string) : isoDate(startOfToday());
 
   // Scan target: /admin/appointments?focus=<id> — that appointment is
   // loaded whatever day it belongs to and pinned, highlighted, at the top.
@@ -75,16 +81,8 @@ export default async function AppointmentsPage({
     .where(eq(garmentTypes.isActive, true))
     .orderBy(garmentTypes.sortOrder);
 
-  const rows = await db
-    .select()
-    .from(appointments)
-    .where(
-      and(
-        gte(appointments.startsAt, new Date(`${date}T00:00:00`)),
-        lt(appointments.startsAt, new Date(`${date}T23:59:59`)),
-      ),
-    )
-    .orderBy(appointments.startsAt);
+  const rows = dayMode ? await listAppointmentsForDay(date) : await listUpcomingAppointments(60);
+  const returnPath = dayMode ? `/admin/appointments?date=${date}` : "/admin/appointments";
 
   const garmentsMap = await garmentsByAppointment(rows.map((r) => r.id));
 
@@ -147,23 +145,26 @@ export default async function AppointmentsPage({
       )}
       {sp.focus && !focusRow && (
         <Alert variant="destructive">
-          <AlertDescription>QR-এর অ্যাপয়েন্টমেন্টটি পাওয়া যায়নি — মুছে ফেলা হয়ে থাকতে পারে।</AlertDescription>
+          <AlertDescription>বারকোডের অ্যাপয়েন্টমেন্টটি পাওয়া যায়নি — মুছে ফেলা হয়ে থাকতে পারে।</AlertDescription>
         </Alert>
       )}
 
       <Card>
         <CardContent className="flex flex-wrap items-center gap-3 pt-5">
+          <Button asChild size="sm" variant={dayMode ? "outline" : "default"}>
+            <Link href="/admin/appointments">আসন্ন সব</Link>
+          </Button>
           <Button asChild variant="outline" size="sm">
             <Link href={`/admin/appointments?date=${shift(-1)}`}>← আগের দিন</Link>
           </Button>
           <div className="text-center">
-            <div className="smallcaps text-stone">নির্বাচিত দিন</div>
-            <div className="text-[19px]">{dateBn(date)}</div>
+            <div className="smallcaps text-stone">{dayMode ? "নির্বাচিত দিন" : "দেখা হচ্ছে"}</div>
+            <div className="text-[19px]">{dayMode ? dateBn(date) : "আসন্ন অ্যাপয়েন্টমেন্ট"}</div>
           </div>
           <Button asChild variant="outline" size="sm">
             <Link href={`/admin/appointments?date=${shift(1)}`}>পরের দিন →</Link>
           </Button>
-          <Button asChild size="sm">
+          <Button asChild size="sm" variant={dayMode ? "default" : "outline"}>
             <Link href={`/admin/appointments?date=${isoDate(startOfToday())}`}>আজ</Link>
           </Button>
           <div className="ml-auto flex gap-5 text-[14.5px]">
@@ -183,8 +184,8 @@ export default async function AppointmentsPage({
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)]">
         <Card>
           <CardHeader>
-            <CardTitle>দিনের তালিকা</CardTitle>
-            <CardDescription>সময় অনুযায়ী সাজানো</CardDescription>
+            <CardTitle>{dayMode ? "দিনের তালিকা" : "আসন্ন তালিকা"}</CardTitle>
+            <CardDescription>{dayMode ? "সময় অনুযায়ী সাজানো" : "আজ থেকে সামনের সব বুকিং, সময় অনুযায়ী সাজানো"}</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
@@ -201,7 +202,7 @@ export default async function AppointmentsPage({
                 {rows.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5}>
-                      <Empty>এই দিনে কোনো অ্যাপয়েন্টমেন্ট নেই।</Empty>
+                      <Empty>{dayMode ? "এই দিনে কোনো অ্যাপয়েন্টমেন্ট নেই।" : "কোনো আসন্ন অ্যাপয়েন্টমেন্ট নেই।"}</Empty>
                     </TableCell>
                   </TableRow>
                 )}
@@ -209,8 +210,9 @@ export default async function AppointmentsPage({
                   const st = STATUS[a.status] ?? STATUS.booked;
                   return (
                     <TableRow key={a.id}>
-                      <TableCell className="num whitespace-nowrap font-medium">
-                        {timeLabel(new Date(a.startsAt))}
+                      <TableCell className="whitespace-nowrap font-medium">
+                        {!dayMode && <div className="num text-[13px] font-normal text-stone">{dateBn(a.startsAt)}</div>}
+                        <span className="num">{timeLabel(new Date(a.startsAt))}</span>
                       </TableCell>
                       <TableCell>
                         <div>{a.name}</div>
@@ -240,11 +242,7 @@ export default async function AppointmentsPage({
                               <form key={s} action={setAppointmentStatus}>
                                 <input type="hidden" name="id" value={a.id} />
                                 <input type="hidden" name="status" value={s} />
-                                <input
-                                  type="hidden"
-                                  name="return_path"
-                                  value={`/admin/appointments?date=${date}`}
-                                />
+                                <input type="hidden" name="return_path" value={returnPath} />
                                 <Button
                                   type="submit"
                                   size="sm"
@@ -285,7 +283,7 @@ export default async function AppointmentsPage({
           </CardHeader>
           <CardContent>
             <form action={createAppointment} className="space-y-3.5">
-              <input type="hidden" name="return_path" value={`/admin/appointments?date=${date}`} />
+              <input type="hidden" name="return_path" value={returnPath} />
               <div className="space-y-1.5">
                 <Label htmlFor="ap-name">নাম *</Label>
                 <Input id="ap-name" name="name" required placeholder="কাস্টমারের নাম" />

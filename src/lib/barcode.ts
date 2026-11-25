@@ -32,7 +32,14 @@ export function formatRecordCode(code: string): string {
   return code.replace(/(\d{4})(?=\d)/g, "$1 ");
 }
 
-/** Normalize a scanned/typed value down to its digits. */
+/**
+ * Normalize a scanned/typed value down to its digits. Bengali digits
+ * are converted first — the printed card shows the code in Bengali
+ * digits (Tiro Bangla), so staff may type it back on a Bengali
+ * keyboard; JS `\d` alone would silently strip those.
+ */
 export function digitsOnly(value: string): string {
-  return value.replace(/\D/g, "");
+  return value
+    .replace(/[০-৯]/g, (ch) => String("০১২৩৪৫৬৭৮৯".indexOf(ch)))
+    .replace(/\D/g, "");
 }
