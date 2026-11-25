@@ -5,7 +5,7 @@ import { expenseRecords } from "@/db/schema";
 import { ApiError } from "@/lib/api-route";
 import { text } from "@/lib/api-input";
 import { recordAudit } from "@/server/audit";
-import { amount, authorize, bool, changedFields, choice, date, page, present, required, uuid, type Actor, type Input, type ListOptions } from "./ops-common";
+import { amount, authorize, bool, changedFields, choice, date, page, present, required, searchTerms, activeTerm, uuid, type Actor, type Input, type ListOptions } from "./ops-common";
 
 function fields(input: Input, current?: typeof expenseRecords.$inferSelect) {
   const value = amount(input.amount ?? (current ? Number(current.amount) : undefined), "খরচ");
@@ -15,7 +15,8 @@ function fields(input: Input, current?: typeof expenseRecords.$inferSelect) {
 }
 export async function listExpenses(actor: Actor, options?: ListOptions) {
   authorize(actor, "management");
-  const p = page(options), filter = p.q ? or(ilike(expenseRecords.category, "%" + p.q + "%"), ilike(expenseRecords.note, "%" + p.q + "%")) : undefined;
+  const p = page(options), t = searchTerms(p.q), active = activeTerm(p.q);
+  const filter = p.q ? or(ilike(expenseRecords.category, "%" + t.raw + "%"), ilike(expenseRecords.note, "%" + t.raw + "%"), t.digits ? sql`${expenseRecords.amount}::text ilike ${"%" + t.digits + "%"}` : undefined, active !== undefined ? eq(expenseRecords.isActive, active) : undefined) : undefined;
   const [rows, count] = await Promise.all([db.select().from(expenseRecords).where(filter).orderBy(desc(expenseRecords.date), desc(expenseRecords.createdAt)).limit(p.limit).offset(p.offset), db.select({ n: sql<number>`count(*)::int` }).from(expenseRecords).where(filter)]);
   return { rows, total: count[0].n, page: p.page, limit: p.limit };
 }

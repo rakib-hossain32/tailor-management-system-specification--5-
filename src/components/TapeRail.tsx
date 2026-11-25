@@ -30,6 +30,8 @@ import {
   Globe,
 } from "lucide-react";
 import { Logo } from "./Logo";
+import { toBnDigits } from "@/lib/units";
+import type { NavBadges } from "@/server/services/nav-badges";
 import { Button } from "@/components/ui/button";
 import { logoutStaff } from "@/app/(public)/staff-login/actions";
 import {
@@ -42,6 +44,28 @@ interface NavItem {
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
+  /** Attention count key — a pill renders when the count is > 0. */
+  badge?: keyof NavBadges;
+  badgeTone?: "gold" | "red" | "soft";
+}
+
+function BadgePill({ value, tone = "soft", active = false }: { value: number; tone?: "gold" | "red" | "soft"; active?: boolean }) {
+  if (!value) return null;
+  const cls =
+    tone === "red"
+      ? "bg-chalk text-white"
+      : tone === "gold"
+        ? active
+          ? "bg-ink text-gold"
+          : "bg-gold text-ink"
+        : active
+          ? "bg-ink/25 text-ink"
+          : "bg-white/20 text-white";
+  return (
+    <span className={`num ml-auto inline-flex min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold leading-none ${cls}`}>
+      {toBnDigits(value)}
+    </span>
+  );
 }
 
 interface NavGroup {
@@ -63,10 +87,10 @@ const GROUPS: NavGroup[] = [
   {
     title: "বিক্রি ও অর্ডার",
     items: [
-      { href: "/admin/orders", label: "অর্ডার তালিকা", icon: ClipboardList },
+      { href: "/admin/orders", label: "অর্ডার তালিকা", icon: ClipboardList, badge: "orders", badgeTone: "soft" },
       { href: "/admin/orders/new", label: "নতুন অর্ডার", icon: PlusCircle },
       { href: "/admin/orders/board", label: "কানবান বোর্ড", icon: Kanban },
-      { href: "/admin/orders/overdue", label: "ওভারডিউ তালিকা", icon: AlertTriangle },
+      { href: "/admin/orders/overdue", label: "ওভারডিউ তালিকা", icon: AlertTriangle, badge: "overdue", badgeTone: "red" },
     ],
   },
   {
@@ -75,13 +99,13 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/customers", label: "কাস্টমার খাতা", icon: Users },
       { href: "/admin/customers/new", label: "নতুন কাস্টমার", icon: UserPlus },
       { href: "/admin/measurements", label: "মাপের কার্ড", icon: Ruler },
-      { href: "/admin/appointments", label: "অ্যাপয়েন্টমেন্ট", icon: CalendarClock },
+      { href: "/admin/appointments", label: "অ্যাপয়েন্টমেন্ট", icon: CalendarClock, badge: "appointments", badgeTone: "gold" },
     ],
   },
   {
     title: "কারিগর ও কাজ",
     items: [
-      { href: "/admin/tasks", label: "কাজ বণ্টন বোর্ড", icon: Scissors },
+      { href: "/admin/tasks", label: "কাজ বণ্টন বোর্ড", icon: Scissors, badge: "tasks", badgeTone: "soft" },
       { href: "/admin/workers", label: "কারিগর তালিকা", icon: HardHat },
       { href: "/admin/workers/payroll", label: "মজুরি ও পেরোল", icon: Banknote },
     ],
@@ -106,9 +130,10 @@ const GROUPS: NavGroup[] = [
   },
 ];
 
-function RailLink({ item, pathname, collapsed }: { item: NavItem; pathname: string; collapsed: boolean }) {
+function RailLink({ item, pathname, collapsed, badges }: { item: NavItem; pathname: string; collapsed: boolean; badges?: NavBadges }) {
   const active = isActive(pathname, item.href);
   const Icon = item.icon;
+  const badgeValue = item.badge ? (badges?.[item.badge] ?? 0) : 0;
   return (
     <Link
       href={item.href}
@@ -124,6 +149,10 @@ function RailLink({ item, pathname, collapsed }: { item: NavItem; pathname: stri
     >
       <Icon className={`size-4 shrink-0 ${active ? "text-ink" : "text-gold/80 group-hover:text-gold"}`} />
       {!collapsed && <span className="truncate">{item.label}</span>}
+      {!collapsed && <BadgePill value={badgeValue} tone={item.badgeTone} active={active} />}
+      {collapsed && badgeValue > 0 && (
+        <span className={`absolute right-1 top-1 size-2 rounded-full ${item.badgeTone === "red" ? "bg-chalk" : "bg-gold"}`} aria-hidden />
+      )}
     </Link>
   );
 }
@@ -136,7 +165,7 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function TapeRail({ defaultCollapsed = false }: { defaultCollapsed?: boolean }) {
+export function TapeRail({ defaultCollapsed = false, badges }: { defaultCollapsed?: boolean; badges?: NavBadges }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   // Desktop sidebar collapse — icon-only rail. The initial state comes
@@ -204,7 +233,7 @@ export function TapeRail({ defaultCollapsed = false }: { defaultCollapsed?: bool
           <nav className="px-3 py-2" aria-label="অ্যাডমিন নেভিগেশন">
             <div className="mb-2 space-y-0.5">
               {TOP_ITEMS.map((item) => (
-                <RailLink key={item.href} item={item} pathname={pathname} collapsed={collapsed} />
+                <RailLink key={item.href} item={item} pathname={pathname} collapsed={collapsed} badges={badges} />
               ))}
             </div>
             {GROUPS.map((group) => (
@@ -217,7 +246,7 @@ export function TapeRail({ defaultCollapsed = false }: { defaultCollapsed?: bool
                 {collapsed && <div className="mx-2.5 border-t border-white/10 pt-1.5" aria-hidden />}
                 <div className="space-y-0.5">
                   {group.items.map((item) => (
-                    <RailLink key={item.href} item={item} pathname={pathname} collapsed={collapsed} />
+                    <RailLink key={item.href} item={item} pathname={pathname} collapsed={collapsed} badges={badges} />
                   ))}
                 </div>
               </div>
@@ -326,6 +355,7 @@ export function TapeRail({ defaultCollapsed = false }: { defaultCollapsed?: bool
                   >
                     <Icon className={`size-4 ${active ? "text-ink" : "text-gold"}`} />
                     <span>{item.label}</span>
+                    <BadgePill value={item.badge ? (badges?.[item.badge] ?? 0) : 0} tone={item.badgeTone} active={active} />
                   </Link>
                 );
               })}
@@ -352,6 +382,7 @@ export function TapeRail({ defaultCollapsed = false }: { defaultCollapsed?: bool
                       >
                         <Icon className={`size-4 ${active ? "text-ink" : "text-gold"}`} />
                         <span>{item.label}</span>
+                        <BadgePill value={item.badge ? (badges?.[item.badge] ?? 0) : 0} tone={item.badgeTone} active={active} />
                       </Link>
                     );
                   })}

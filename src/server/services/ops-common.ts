@@ -74,6 +74,25 @@ export function searchTerms(q: string) {
   return { raw: q, normalized, digits: normalized.replace(/\D/g, "") };
 }
 
+/**
+ * "সক্রিয়" / "নিষ্ক্রিয়" (or active/inactive) typed into a search box
+ * becomes an is_active filter — staff search the manage lists by
+ * status word as often as by name. নিষ্ক্রিয় CONTAINS সক্রিয়, so the
+ * inactive spelling must be tested first.
+ */
+export function activeTerm(q: string): boolean | undefined {
+  const t = q.toLowerCase();
+  if (t.includes("নিষ্ক্রিয়") || t.includes("inactive")) return false;
+  if (t.includes("সক্রিয়") || t.includes("active")) return true;
+  return undefined;
+}
+
+/** Bengali label typed into a search box → the stored enum code. */
+export function labelTerm(q: string, map: Record<string, string>): string | undefined {
+  for (const [label, code] of Object.entries(map)) if (q.includes(label)) return code;
+  return undefined;
+}
+
 export function changedFields(input: Input) {
   return Object.keys(input).filter((key) => !/password|secret|token/i.test(key));
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { Html5Qrcode } from "html5-qrcode";
 import { useRouter } from "next/navigation";
 import { ScanBarcode, Camera, X } from "lucide-react";
@@ -53,7 +53,11 @@ export function BarcodeScanner({
   const [error, setError] = useState<string | null>(null);
   const [manual, setManual] = useState("");
   const [lastCode, setLastCode] = useState<string | null>(null);
-  const regionId = "tailorpro-barcode-region";
+  // Unique per instance: several scanners can live on one page (rail,
+  // dashboard, order list, new-order form) and html5-qrcode binds by
+  // element id — a shared constant id makes every instance fight over
+  // the first matching element and the camera never starts.
+  const regionId = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const busyRef = useRef(false);
 
   const goTo = useCallback((target: string) => {
@@ -120,10 +124,12 @@ export function BarcodeScanner({
     if (!open) return;
     let cancelled = false;
     let scanner: Html5Qrcode | null = null;
+    let startSettled: Promise<void> = Promise.resolve();
 
     async function stopScanner() {
       if (!scanner) return;
       try {
+        await startSettled.catch(() => undefined);
         if (scanner.isScanning) await scanner.stop();
         scanner.clear();
       } catch {
@@ -132,6 +138,15 @@ export function BarcodeScanner({
     }
 
     (async () => {
+      // The camera only exists in a secure context (https or
+      // localhost). Over plain http on a LAN address the browser
+      // blocks it outright — say so plainly instead of a vague error.
+      if (typeof window !== "undefined" && !window.isSecureContext) {
+        setError(
+          "এই ঠিকানায় (http) ব্রাউজার ক্যামেরা চালু করতে দেয় না — localhost অথবা https ঠিকানায় পেজটি খুলুন, অথবা নিচে বারকোডের নম্বর লিখে খুঁজুন।",
+        );
+        return;
+      }
       try {
         const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import("html5-qrcode");
         if (cancelled) return;
@@ -149,30 +164,51 @@ export function BarcodeScanner({
             Html5QrcodeSupportedFormats.CODABAR,
           ],
         });
-        await scanner.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 280, height: 120 } },
-          (decoded) => {
-            if (!cancelled) void resolveAndGo(decoded);
-          },
-          () => /* per-frame decode miss */ undefined,
-        );
+        const config = { fps: 10, qrbox: { width: 280, height: 120 } };
+        const onDecode = (decoded: string) => {
+          if (!cancelled) void resolveAndGo(decoded);
+        };
+        const onMiss = () => /* per-frame decode miss */ undefined;
+        // Give the dialog a beat to finish mounting/animating —
+        // starting against a not-yet-laid-out element fails outright.
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        if (cancelled) return;
+        // Camera fallback chain: rear camera (phones) → front camera
+        // (laptops reject an "environment" demand) → first camera the
+        // browser can enumerate.
+        startSettled = (async () => {
+          try {
+            await scanner!.start({ facingMode: "environment" }, config, onDecode, onMiss);
+            return;
+          } catch { /* try the next camera */ }
+          if (cancelled) return;
+          try {
+            await scanner!.start({ facingMode: "user" }, config, onDecode, onMiss);
+            return;
+          } catch { /* try enumeration */ }
+          if (cancelled) return;
+          const cameras = await Html5Qrcode.getCameras().catch(() => []);
+          if (!cameras.length) throw new Error("no camera found");
+          await scanner!.start(cameras[cameras.length - 1].id, config, onDecode, onMiss);
+        })();
+        await startSettled;
         if (cancelled) await stopScanner();
       } catch (err) {
         if (cancelled) return;
+        const detail = err instanceof Error ? err.name || err.message : "";
         setError(
-          "ক্যামেরা চালু করা যায়নি — অনুমতি দিন অথবা নিচে বারকোডের নম্বর লিখে খুঁজুন।",
+          "ক্যামেরা চালু করা যায়নি — ব্রাউজারে ক্যামেরার অনুমতি দিন অথবা নিচে বারকোডের নম্বর লিখে খুঁজুন।" +
+            (detail ? ` (${detail})` : ""),
         );
-        void err;
       }
     })();
 
     return () => {
       cancelled = true;
-      if (scanner?.isScanning) void stopScanner();
+      void stopScanner();
       busyRef.current = false;
     };
-  }, [open, resolveAndGo ]);
+  }, [open, resolveAndGo, regionId]);
 
   return (
     <>

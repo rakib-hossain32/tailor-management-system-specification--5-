@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Plus, Pencil, Archive, X, Loader2 } from "lucide-react";
@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DateField } from "@/components/DateField";
 
 type Row = Record<string, unknown> & { id?: string };
 type Field = { key: string; label: string; type?: string; required?: boolean; options?: string[]; createOnly?: boolean; editOnly?: boolean };
@@ -64,6 +66,10 @@ export function ManageResources({ resource, available, initialRows, total, page,
 }) {
   const spec = specs[resource];
   const [rows, setRows] = useState(initialRows);
+  const [totalState, setTotalState] = useState(total);
+  const [pageState, setPageState] = useState(page);
+  const [search, setSearch] = useState(query);
+  const searchFirst = useRef(true);
   const [editor, setEditor] = useState<Row | null | undefined>(undefined);
   const [values, setValues] = useState<Record<string, string | boolean>>({});
   const [fields, setFields] = useState<MeasureField[]>([]);
@@ -74,18 +80,38 @@ export function ManageResources({ resource, available, initialRows, total, page,
   const [error, setError] = useState("");
   const editId = editor?.id;
   function open(row?: Row) { setEditor(row ?? null); setValues(initialValues(row, resource, today)); setFields(row ? measurements(row) : []); setSchemaChanged(false); setStyleFields((row?.styleSchema as { options?: StyleField[] } | undefined)?.options ?? []); setStylesChanged(false); setError(""); }
-  async function api(path: string, method = "GET", body?: unknown) {
+  const api = useCallback(async (path: string, method = "GET", body?: unknown) => {
     const response = await fetch(path, { method, headers: body === undefined ? undefined : { "content-type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });
     const data = await response.json();
     if (!response.ok) throw new Error(data?.error?.message ?? "অনুরোধ সম্পন্ন করা যায়নি");
     return data;
-  }
+  }, []);
+  const load = useCallback(
+    async (nextPage: number, nextQuery: string) => {
+      try {
+        const data = await api("/api/v1/admin/" + resource + "?" + new URLSearchParams({ page: String(nextPage), limit: String(limit), q: nextQuery }));
+        setRows(data.data);
+        setTotalState(data.meta?.total ?? data.data.length);
+        setPageState(nextPage);
+      } catch { toast.error("তালিকা হালনাগাদ করা যায়নি — পাতাটি আবার খুলুন"); }
+    },
+    [resource, limit, api],
+  );
   async function reload() {
-    try {
-      const data = await api("/api/v1/admin/" + resource + "?" + new URLSearchParams({ page: String(page), limit: String(limit), q: query }));
-      setRows(data.data);
-    } catch { toast.error("তালিকা হালনাগাদ করা যায়নি — পাতাটি আবার খুলুন"); }
+    await load(pageState, search);
   }
+  // Instant search: typing re-queries the list (debounced) — there is
+  // no খুঁজুন button anywhere on this page anymore.
+  useEffect(() => {
+    if (searchFirst.current) {
+      searchFirst.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      void load(1, search);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search, load]);
   async function edit(row: Row) {
     setBusy(true);
     try { const result = await api("/api/v1/admin/" + resource + "/" + row.id); open(result.data); }
@@ -137,19 +163,23 @@ export function ManageResources({ resource, available, initialRows, total, page,
       <header><div className="smallcaps text-stone">ব্যবস্থাপনা</div><h1 className="mt-1 text-[32px]">তথ্য যোগ ও সম্পাদনা</h1><p className="text-ink-3">সক্রিয় অবস্থা বদলালে পুরনো অর্ডার ও হিসাব সংরক্ষিত থাকে।</p>{resource === "garments" && <p className="mt-1 text-ink-3">এখানে যোগ করা ও <b>সক্রিয়</b> রাখা পোশাকগুলোই অ্যাপয়েন্টমেন্ট পেজের “কী বানাতে চান” তালিকায় দেখাবে — কাস্টমার সেখান থেকে এক বা একাধিক বেছে নিতে পারবে।</p>}</header>
       <nav className="flex flex-wrap gap-2" aria-label="তথ্যের ধরন">{available.map((item) => <Link key={item} href={"/admin/manage?resource=" + item} className={"rounded-full border px-4 py-2 text-sm " + (item === resource ? "bg-ink text-paper" : "border-ink/20 hover:bg-gold-light")}>{specs[item].label}</Link>)}</nav>
       <Card>
-        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3"><CardTitle>{spec.label} <span className="num text-sm text-stone">({total})</span></CardTitle><Button onClick={() => open()} disabled={busy}><Plus className="size-4" /> নতুন যোগ করুন</Button></CardHeader>
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3"><CardTitle>{spec.label} <span className="num text-sm text-stone">({totalState})</span></CardTitle><Button onClick={() => open()} disabled={busy}><Plus className="size-4" /> নতুন যোগ করুন</Button></CardHeader>
         <CardContent>
-          <form action="/admin/manage" method="get" className="mb-4 flex gap-2"><input type="hidden" name="resource" value={resource} /><Input name="q" defaultValue={query} aria-label="অনুসন্ধান" placeholder="নাম বা কোড দিয়ে খুঁজুন" /><Button type="submit" variant="outline">খুঁজুন</Button></form>
+          <div className="mb-4"><Input value={search} onChange={(event) => setSearch(event.target.value)} aria-label="অনুসন্ধান" placeholder="লিখলেই খুঁজবে — নাম (বাংলা/ইংরেজি), কোড, ফোন, মূল্য, সক্রিয় বা নিষ্ক্রিয়" autoComplete="off" /></div>
           <div className="overflow-x-auto"><Table className="w-full text-left text-sm"><TableHeader><TableRow className="border-b border-ink/20">{spec.columns.map(([key, label]) => <TableHead key={key} className="px-3 py-3">{label}</TableHead>)}<TableHead className="px-3 py-3">অবস্থা</TableHead><TableHead className="px-3 py-3">পরিবর্তন</TableHead></TableRow></TableHeader><TableBody>
             {rows.map((row) => <TableRow key={row.id} className="border-b border-ink/10">{spec.columns.map(([key]) => <TableCell key={key} className="px-3 py-3">{display(row[key])}</TableCell>)}<TableCell className="px-3 py-3">{resource === "appointments" ? display(row.status) : row.isActive === false ? "নিষ্ক্রিয়" : "সক্রিয়"}</TableCell><TableCell className="px-3 py-3"><div className="flex gap-2"><Button variant="outline" size="sm" onClick={() => void edit(row)} disabled={busy}><Pencil className="size-3.5" /> সম্পাদনা</Button><Button variant="ghost" size="sm" onClick={() => void archive(row)} disabled={busy || row.isActive === false || row.status === "cancelled" || row.status === "done"}><Archive className="size-3.5" />{resource === "appointments" ? "বাতিল" : "নিষ্ক্রিয়"}</Button></div></TableCell></TableRow>)}
             {!rows.length && <TableRow><TableCell colSpan={spec.columns.length + 2} className="py-10 text-center text-stone">কোনো তথ্য নেই। নতুন তথ্য যোগ করুন।</TableCell></TableRow>}
           </TableBody></Table></div>
-          <div className="mt-4 flex items-center justify-between text-sm"><span>পৃষ্ঠা {page}</span><div className="flex gap-3">{page > 1 && <Link href={"/admin/manage?" + new URLSearchParams({ resource, page: String(page - 1), q: query })}>আগের পৃষ্ঠা</Link>}{page * limit < total && <Link href={"/admin/manage?" + new URLSearchParams({ resource, page: String(page + 1), q: query })}>পরের পৃষ্ঠা</Link>}</div></div>
+          <div className="mt-4 flex items-center justify-between text-sm"><span>পৃষ্ঠা <span className="num">{pageState}</span></span><div className="flex gap-3">{pageState > 1 && <Button type="button" variant="ghost" size="sm" onClick={() => void load(pageState - 1, search)}>আগের পৃষ্ঠা</Button>}{pageState * limit < totalState && <Button type="button" variant="ghost" size="sm" onClick={() => void load(pageState + 1, search)}>পরের পৃষ্ঠা</Button>}</div></div>
         </CardContent>
       </Card>
-      {editor !== undefined && <Card>
-        <CardHeader className="flex flex-row items-center justify-between"><CardTitle>{editId ? "সম্পাদনা" : "নতুন " + spec.label}</CardTitle><Button variant="ghost" size="sm" onClick={() => setEditor(undefined)} disabled={busy} aria-label="বন্ধ করুন"><X className="size-4" /></Button></CardHeader>
-        <CardContent><form onSubmit={submit} className="space-y-5"><div className="grid gap-4 md:grid-cols-2">
+      <Dialog open={editor !== undefined} onOpenChange={(next) => { if (!next && !busy) setEditor(undefined); }}>
+        <DialogContent className="max-h-[92vh] w-[94vw] max-w-3xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editId ? spec.label + " — সম্পাদনা" : "নতুন " + spec.label}</DialogTitle>
+            <DialogDescription>সব তথ্য দিয়ে সংরক্ষণ করুন — সক্রিয় অবস্থা বদলালে পুরনো অর্ডার ও হিসাব সংরক্ষিত থাকে।</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={submit} className="space-y-5"><div className="grid gap-4 md:grid-cols-2">
           {spec.fields.filter((field) => (!field.createOnly || !editId) && (!field.editOnly || Boolean(editId)) && !(resource === "workers" && field.key === "password" && !isOwner)).map((field) => {
             const id = resource + "-" + field.key;
             const isIdentity = ["name", "phone", "email"].includes(field.key);
@@ -164,6 +194,7 @@ export function ManageResources({ resource, available, initialRows, total, page,
                 </SelectContent>
               </Select> :
               field.type === "textarea" ? <Textarea id={id} value={String(values[field.key] ?? "")} onChange={(event) => setValues({ ...values, [field.key]: event.target.value })} disabled={disabled} /> :
+              field.type === "date" ? <DateField key={(editId ?? "new") + "-" + field.key} name={field.key} defaultValue={String(values[field.key] ?? "") || undefined} onChange={(iso) => setValues({ ...values, [field.key]: iso })} /> :
               <Input id={id} type={field.type ?? "text"} value={String(values[field.key] ?? "")} onChange={(event) => setValues({ ...values, [field.key]: event.target.value })} required={field.required || (resource === "users" && field.key === "password" && !editId)} minLength={field.type === "password" ? 10 : undefined} step={field.type === "number" ? "0.01" : field.type === "time" ? 300 : undefined} disabled={disabled} autoComplete={field.type === "password" ? "new-password" : "off"} />}
             </div>;
           })}
@@ -181,8 +212,9 @@ export function ManageResources({ resource, available, initialRows, total, page,
         {resource === "fabrics" && Array.isArray(editor?.movements) && <div className="space-y-2 rounded-md border border-ink/15 p-4"><h3 className="font-medium">স্টক পরিবর্তনের লেজার</h3>{(editor.movements as Row[]).map((movement) => <div key={String(movement.id)} className="flex flex-wrap justify-between gap-2 border-b border-ink/10 py-2 text-sm"><span>{display(movement.reason)} · {display(movement.actorName)}</span><span className="num">{display(movement.qtyDelta)}</span></div>)}{!editor.movements.length && <p className="text-sm text-stone">কোনো স্টক পরিবর্তন নেই।</p>}</div>}
         {error && <p role="alert" className="text-chalk">{error}</p>}
         <div className="flex gap-2"><Button type="submit" disabled={busy}>{busy && <Loader2 className="size-4 animate-spin" />} সংরক্ষণ করুন</Button><Button type="button" variant="outline" onClick={() => setEditor(undefined)} disabled={busy}>বন্ধ করুন</Button></div>
-        </form></CardContent>
-      </Card>}
+        </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
