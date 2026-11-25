@@ -23,7 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { dateBn, isoDate, startOfToday } from "@/lib/format";
-import { createAppointment, setAppointmentStatus } from "../actions";
+import { createAppointment, openCustomerFromAppointment, setAppointmentStatus } from "../actions";
 import { garmentsByAppointment } from "@/server/services/appointment-garments";
 import { DateField } from "@/components/DateField";
 
@@ -140,6 +140,15 @@ export default async function AppointmentsPage({
                 </>
               )}
             </CardDescription>
+            {!focusRow.customerId && (
+              <form action={openCustomerFromAppointment} className="pt-1">
+                <input type="hidden" name="id" value={focusRow.id} />
+                <input type="hidden" name="return_path" value={returnPath} />
+                <Button type="submit" size="sm" variant="gold">
+                  কাস্টমার খাতায় নিন → (বুকিংয়ের তথ্য দিয়েই তৈরি হবে)
+                </Button>
+              </form>
+            )}
           </CardHeader>
         </Card>
       )}
@@ -237,6 +246,26 @@ export default async function AppointmentsPage({
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap justify-end gap-1.5">
+                          {a.customerId ? (
+                            <Button asChild size="sm" variant="gold">
+                              <Link href={`/admin/customers/${a.customerId}?tab=measurements`}>
+                                মাপ ও অর্ডার →
+                              </Link>
+                            </Button>
+                          ) : (
+                            <form action={openCustomerFromAppointment}>
+                              <input type="hidden" name="id" value={a.id} />
+                              <input type="hidden" name="return_path" value={returnPath} />
+                              <Button
+                                type="submit"
+                                size="sm"
+                                variant="gold"
+                                title="বুকিংয়ের নাম-ফোন দিয়েই কাস্টমার খাতা তৈরি হবে — আবার টাইপ করতে হবে না, সোজা মাপের পেজে নিয়ে যাবে"
+                              >
+                                কাস্টমার খাতায় নিন →
+                              </Button>
+                            </form>
+                          )}
                           {["confirmed", "done", "no_show", "cancelled"].map((s) =>
                             s === a.status ? null : (
                               <form key={s} action={setAppointmentStatus}>

@@ -4,8 +4,12 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { AuthError, requireAdmin, requireOwnerOrManager, requireStaff, type StaffSession } from "@/lib/access";
 import { ApiError } from "@/lib/api-route";
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { appointmentRecords } from "@/db/schema";
 import { createExpense } from "@/server/services/expenses";
 import { adjustStock } from "@/server/services/inventory";
+import { createCustomer } from "@/server/services/customers";
 import { createAppointment as createBooking, changeAppointmentStatus } from "@/server/services/appointments";
 import { autoDistributeTasks as distribute, moveTask as transitionTask, updateAssignmentPolicy as savePolicy } from "@/server/services/tasks";
 import { getAdminSiteContent, saveSiteContent } from "@/server/cms/admin";
@@ -51,6 +55,37 @@ export async function createAppointment(form: FormData): Promise<void> {
 }
 export async function setAppointmentStatus(form: FormData): Promise<void> {
   await perform(form, "/admin/appointments", requireAdmin, (actor) => changeAppointmentStatus(actor, value(form, "id"), value(form, "status")), "অ্যাপয়েন্টমেন্টের অবস্থা সংরক্ষিত হয়েছে");
+}
+/**
+ * One click from a booking to the customer's measurement page. The
+ * booking already carries the person's name + phone, so the customer
+ * record is created (or found) from the booking's person alone — the
+ * admin never re-types what the customer already submitted. The
+ * appointment then links itself: appointment_details joins customers
+ * on person_id, so this booking (and every other booking by the same
+ * person) shows the customer from now on.
+ */
+export async function openCustomerFromAppointment(form: FormData): Promise<void> {
+  const path = returnPath(form, "/admin/appointments");
+  let customerId = "";
+  try {
+    const actor = await requireAdmin();
+    const [appt] = await db
+      .select({ personId: appointmentRecords.personId })
+      .from(appointmentRecords)
+      .where(eq(appointmentRecords.id, value(form, "id")))
+      .limit(1);
+    if (!appt) flash(path, "error", "অ্যাপয়েন্টমেন্ট পাওয়া যায়নি");
+    const result = await createCustomer(actor, { personId: appt!.personId });
+    customerId = result.id;
+  } catch (error) {
+    if (error instanceof AuthError && error.status === 401) redirect("/staff-login");
+    if (error instanceof AuthError || error instanceof ApiError) flash(path, "error", error.message);
+    console.error("Admin action failed", error);
+    flash(path, "error", "কাস্টমার খাতা খোলা যায়নি — আবার চেষ্টা করুন");
+  }
+  revalidatePath("/admin", "layout");
+  redirect(`/admin/customers/${customerId}?tab=measurements`);
 }
 export async function autoDistributeTasks(form: FormData): Promise<void> {
   await perform(form, "/admin/tasks", requireAdmin, (actor) => distribute(actor, value(form, "task_id") || undefined), "কাজের বণ্টন সংরক্ষিত হয়েছে");
