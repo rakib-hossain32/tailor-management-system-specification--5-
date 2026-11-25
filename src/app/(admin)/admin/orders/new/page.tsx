@@ -4,6 +4,7 @@ import { asc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { garmentTypes, settings, tasks, workers } from "@/db/schema";
 import { NewOrderForm } from "@/components/NewOrderForm";
+import { PageGuide } from "@/components/admin/PageGuide";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +63,14 @@ export default async function NewOrderPage({
           কাজের চাপ অনুযায়ী স্বয়ংক্রিয় বা ম্যানুয়াল কাজ বণ্টন করা যাবে।
         </p>
       </header>
+
+      <PageGuide
+        items={[
+          ["ধাপ ১ — কাস্টমার", "ফোন নম্বর দিয়ে খুঁজুন; নতুন হলে নাম-ফোন দিলেই প্রোফাইল তৈরি হয়ে যাবে।"],
+          ["ধাপ ২ — পোশাক ও মাপ", "পোশাক বাছুন — আগের মাপ থাকলে নিজে থেকে আসবে, না থাকলে নতুন মাপ নিন। এই মাপের স্ন্যাপশট অর্ডারে সেভ থাকবে।"],
+          ["ধাপ ৩ — বণ্টন ও পেমেন্ট", "কারিগর বণ্টন (অটো/ম্যানুয়াল) আর অগ্রিম পেমেন্ট দিলেই অর্ডার তৈরি, ইনভয়েস প্রিন্ট করা যাবে।"],
+        ]}
+      />
 
       <NewOrderForm
         garments={garments.map((g) => ({

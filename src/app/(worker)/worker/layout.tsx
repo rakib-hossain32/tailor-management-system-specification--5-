@@ -4,6 +4,7 @@ import { ClipboardList, Banknote, Smartphone, LogOut } from "lucide-react";
 import { getStaffSession } from "@/lib/access";
 import { logoutStaff } from "@/app/(public)/staff-login/actions";
 import { Logo } from "@/components/Logo";
+import { Button } from "@/components/ui/button";
 
 /**
  * Worker view — its own shell, deliberately separate from the admin panel.
@@ -47,13 +48,14 @@ export default async function WorkerLayout({ children }: { children: React.React
               আয়
             </Link>
             <form action={logoutStaff}>
-              <button
+              <Button
                 type="submit"
-                className="rounded-md px-3 py-2 text-[14px] text-white/70 hover:bg-white/10"
+                variant="ghost"
+                className="px-3 py-2 text-[14px] text-white/70 hover:bg-white/10 hover:text-white"
               >
                 <LogOut className="mr-1.5 inline size-4 text-gold" />
                 লগআউট
-              </button>
+              </Button>
             </form>
           </nav>
         </div>

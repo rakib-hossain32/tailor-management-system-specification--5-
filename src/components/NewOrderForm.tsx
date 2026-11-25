@@ -479,10 +479,11 @@ function NewOrderFields({
                     <ul className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-md border border-ink/15 bg-white shadow-xl">
                       {hits.map((h) => (
                         <li key={h.id}>
-                          <button
+                          <Button
                             type="button"
+                            variant="ghost"
                             onClick={() => pickCustomer(h)}
-                            className="flex w-full items-baseline gap-3 px-3.5 py-2.5 text-left hover:bg-gold-light/50"
+                            className="flex h-auto w-full items-baseline justify-start gap-3 px-3.5 py-2.5 text-left font-normal hover:bg-gold-light/50"
                           >
                             <span className="font-medium">{h.name}</span>
                             <span className="num text-[14px] text-ink-3">{h.phone}</span>
@@ -491,7 +492,7 @@ function NewOrderFields({
                                 বকেয়া ৳{Math.round(h.open_due).toLocaleString("en-US")}
                               </span>
                             )}
-                          </button>
+                          </Button>
                         </li>
                       ))}
                     </ul>
@@ -783,13 +784,15 @@ function NewOrderFields({
                 const Icon = opt.icon;
                 const active = assignmentMode === opt.mode;
                 return (
-                  <button
+                  <Button
                     key={opt.mode}
                     type="button"
+                    variant="outline"
                     onClick={() => setAssignmentMode(opt.mode)}
-                    className={`flex flex-col items-start gap-1 rounded-md border p-3.5 text-left transition-all ${
+                    aria-pressed={active}
+                    className={`flex h-auto flex-col items-start gap-1 rounded-md p-3.5 text-left font-normal whitespace-normal transition-all ${
                       active
-                        ? "border-gold bg-gold-light/40 ring-2 ring-gold/30"
+                        ? "border-gold bg-gold-light/40 ring-2 ring-gold/30 hover:bg-gold-light/40"
                         : "border-ink/15 bg-white hover:bg-paper-2/50"
                     }`}
                   >
@@ -798,7 +801,7 @@ function NewOrderFields({
                       <Icon className={`size-4 ${active ? "text-gold-dark" : "text-stone"}`} />
                     </div>
                     <span className="text-[12.5px] text-ink-3">{opt.sub}</span>
-                  </button>
+                  </Button>
                 );
               })}
             </div>

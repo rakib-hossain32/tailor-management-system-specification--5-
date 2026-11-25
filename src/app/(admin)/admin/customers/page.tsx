@@ -49,7 +49,7 @@ export default async function CustomersPage({
     .limit(200);
 
   const dueRows = await db
-    .select({ customerId: customers.id, due: sql<string>`coalesce(sum(orders.due_amount),0)` })
+    .select({ customerId: customers.id, due: sql<string>`coalesce(sum(${orders.dueAmount}),0)` })
     .from(orders)
     .innerJoin(customers, eq(orders.customerId, customers.id))
     .where(sql`${orders.status} not in ('delivered','cancelled')`)

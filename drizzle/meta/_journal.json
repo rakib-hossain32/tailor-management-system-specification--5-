@@ -15,6 +15,13 @@
       "when": 1795542557507,
       "tag": "0001_site_content_blocks",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795594282638,
+      "tag": "0002_appointment_garments",
+      "breakpoints": true
     }
   ]
 }

@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { customers } from "@/db/schema";
 import { getCustomerSession } from "@/lib/access";
 import { SiteHeader } from "@/components/public/SiteHeader";
+import { Button } from "@/components/ui/button";
 import { SiteFooter } from "@/components/public/SiteFooter";
 
 export const dynamic = "force-dynamic";
@@ -47,9 +48,9 @@ export default async function AccountLayout({ children }: { children: React.Reac
               }}
               className="ml-auto"
             >
-              <button className="rounded-sm border border-ink/30 px-4 py-2.5 text-[15px] hover:bg-ink/5">
+              <Button type="submit" variant="outline">
                 লগআউট
-              </button>
+              </Button>
             </form>
           </div>
           <nav className="mx-auto flex max-w-[1200px] gap-2 overflow-x-auto px-4 pb-3 sm:px-6">

@@ -114,6 +114,7 @@ export const stockMovements = pgTable("stock_movements", {
 
 export const appointmentRecords = pgTable("appointments", {
   id: uuid("id").primaryKey().defaultRandom(), personId: uuid("person_id").notNull().references(() => people.id), purpose: text("purpose").notNull().default("নতুন মাপ"),
+  garments: text("garments").array().notNull().default(sql`'{}'::text[]`),
   startsAt: timestamp("starts_at", { withTimezone: true }).notNull(), endsAt: timestamp("ends_at", { withTimezone: true }).notNull(), status: text("status").notNull().default("booked"),
   locationType: text("location_type").notNull().default("shop"), address: text("address"), notes: text("notes"), ...timestamps(),
 }, (t) => [index("appts_start_idx").on(t.startsAt), check("appointments_positive_duration", sql`${t.endsAt} > ${t.startsAt}`)]);

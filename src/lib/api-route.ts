@@ -32,9 +32,10 @@ export function apiErrorResponse(error: unknown): NextResponse {
     if (candidate.code === "23505") return NextResponse.json({ error: { code: "DUPLICATE_RECORD", message: "এই তথ্য ইতিমধ্যে সংরক্ষিত আছে" }, meta: { requestId } }, { status: 409 });
     if (candidate.code === "23503") return NextResponse.json({ error: { code: "REFERENCE_CONFLICT", message: "এই তথ্য অন্য record-এর সঙ্গে যুক্ত আছে অথবা reference সঠিক নয়" }, meta: { requestId } }, { status: 409 });
     if (candidate.code === "23514") return NextResponse.json({ error: { code: "INVALID_RECORD", message: "তথ্য database-এর নিয়ম মেনে দেওয়া হয়নি" }, meta: { requestId } }, { status: 422 });
+    if (candidate.code === "42703" || candidate.code === "42P01") return NextResponse.json({ error: { code: "DATABASE_NOT_UPDATED", message: "ডাটাবেস আপডেট বাকি আছে — npm run db:migrate চালান" }, meta: { requestId } }, { status: 503 });
     cause = candidate.cause;
   }
-  console.error("API request failed", { requestId, name: error instanceof Error ? error.name : "UnknownError" });
+  console.error("API request failed", { requestId, name: error instanceof Error ? error.name : "UnknownError", message: error instanceof Error ? error.message : undefined });
   return NextResponse.json({ error: { code: "SERVER_ERROR", message: "অনুরোধ সম্পন্ন করা যায়নি — আবার চেষ্টা করুন" }, meta: { requestId } }, { status: 500 });
 }
 

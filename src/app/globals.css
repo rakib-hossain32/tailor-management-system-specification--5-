@@ -25,9 +25,15 @@
   --color-chalk: #b23a2e;
   --color-chalk-light: #fbe3df;
 
-  --font-display: "Tiro Bangla", "Noto Serif Bengali", Georgia, serif;
+  /* Two typefaces, by the owner's decision:
+     - Hind Siliguri for ALL writing (headings, body, labels, UI).
+     - IBM Plex Mono ONLY for data figures via .num — order numbers,
+       dates, prices, measurements, phone numbers — so digits align in
+       tables. It has no Bengali glyphs, so any Bengali character inside
+       .num falls back to Hind Siliguri (listed second, deliberately). */
+  --font-display: "Hind Siliguri", "Noto Sans Bengali", system-ui, sans-serif;
   --font-sans: "Hind Siliguri", "Noto Sans Bengali", system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-mono: "IBM Plex Mono", "Hind Siliguri", "Noto Sans Bengali", ui-monospace, monospace;
 }
 
 @layer base {
@@ -53,7 +59,9 @@
   h2,
   h3 {
     font-family: var(--font-display);
-    font-weight: 400;
+    /* Was 400 for the old serif display font; Hind Siliguri headings
+       need semibold to carry the same presence. */
+    font-weight: 600;
     line-height: 1.25;
   }
   ::selection {
@@ -103,7 +111,8 @@
 }
 
 .smallcaps {
-  font-family: var(--font-mono);
+  /* Section labels are writing, not figures — Hind Siliguri, not mono. */
+  font-family: var(--font-sans);
   font-size: 0.68rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -163,6 +172,8 @@
   }
 }
 
+
+
 .rise {
   animation: rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -177,9 +188,37 @@
   }
 }
 
+/* cinematic hero — very slow Ken Burns zoom on the backdrop photo */
+.hero-zoom {
+  animation: hero-zoom 26s ease-in-out infinite alternate;
+}
+@keyframes hero-zoom {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.09);
+  }
+}
+
+/* admin sidebar collapse: TapeRail toggles this body flag; the content
+   area's left padding follows the rail's width (16rem → 4.5rem). */
+@media (min-width: 1024px) {
+  .admin-main {
+    transition: padding-left 0.25s ease;
+  }
+  body[data-admin-sidebar="collapsed"] .admin-main {
+    padding-left: 4.5rem;
+  }
+  body[data-admin-sidebar="expanded"] .admin-main {
+    padding-left: 16rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .chalk-draw,
-  .rise {
+  .rise,
+  .hero-zoom {
     animation: none;
     stroke-dashoffset: 0;
   }

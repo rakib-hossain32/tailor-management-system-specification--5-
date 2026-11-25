@@ -10,6 +10,7 @@ import { moveTask } from "@/app/(admin)/admin/actions";
 import { dateShort } from "@/lib/format";
 import { formatMeasurement } from "@/lib/units";
 import { flattenFields, type MeasurementSchema } from "@/lib/measurements";
+import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
@@ -94,9 +95,9 @@ export default async function WorkerTaskPage({ params }: { params: Promise<{ id:
               <input type="hidden" name="id" value={r.t.id} />
               <input type="hidden" name="action" value="start" />
               <input type="hidden" name="return_path" value={`/worker/tasks/${r.t.id}`} />
-              <button className="rounded-sm bg-ink px-7 py-4 text-[20px] text-paper hover:bg-ink-2">
+              <Button type="submit" size="lg" className="h-auto px-7 py-4 text-[20px]">
                 শুরু করলাম
-              </button>
+              </Button>
             </form>
           ) : null}
           {r.t.status === "in_progress" ? (
@@ -104,9 +105,9 @@ export default async function WorkerTaskPage({ params }: { params: Promise<{ id:
               <input type="hidden" name="id" value={r.t.id} />
               <input type="hidden" name="action" value="done" />
               <input type="hidden" name="return_path" value={`/worker/tasks/${r.t.id}`} />
-              <button className="rounded-sm bg-[#1D6B3F] px-7 py-4 text-[20px] text-paper hover:opacity-90">
+              <Button type="submit" size="lg" className="h-auto bg-[#1D6B3F] px-7 py-4 text-[20px] text-paper hover:bg-[#1D6B3F]/90">
                 শেষ করলাম
-              </button>
+              </Button>
             </form>
           ) : null}
           {r.t.status === "done" && (

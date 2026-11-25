@@ -47,7 +47,7 @@ export async function updateShopInfo(form: FormData): Promise<void> {
   }, "দোকানের তথ্য সংরক্ষিত হয়েছে");
 }
 export async function createAppointment(form: FormData): Promise<void> {
-  await perform(form, "/admin/appointments", requireAdmin, (actor) => createBooking(actor, { name: value(form, "name"), phone: value(form, "phone"), purpose: value(form, "purpose"), date: value(form, "date"), slot: value(form, "time"), notes: value(form, "notes"), status: "confirmed" }), "অ্যাপয়েন্টমেন্ট তৈরি হয়েছে");
+  await perform(form, "/admin/appointments", requireAdmin, (actor) => createBooking(actor, { name: value(form, "name"), phone: value(form, "phone"), purpose: value(form, "purpose"), garments: form.getAll("garments").map(String), date: value(form, "date"), slot: value(form, "time"), notes: value(form, "notes"), status: "confirmed" }), "অ্যাপয়েন্টমেন্ট তৈরি হয়েছে");
 }
 export async function setAppointmentStatus(form: FormData): Promise<void> {
   await perform(form, "/admin/appointments", requireAdmin, (actor) => changeAppointmentStatus(actor, value(form, "id"), value(form, "status")), "অ্যাপয়েন্টমেন্টের অবস্থা সংরক্ষিত হয়েছে");

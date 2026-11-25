@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHead } from "@/components/admin/PageHead";
+import { PageGuide } from "@/components/admin/PageGuide";
 import { createCustomer } from "./actions";
 import { DateField } from "@/components/DateField";
 
@@ -33,6 +34,14 @@ export default async function NewCustomerPage({
         eyebrow="নতুন কাস্টমার"
         title="কাস্টমার তৈরি করুন"
         sub="ফোন নম্বর ইউনিক — একই নম্বরে আগে থেকে কাস্টমার থাকলে সেই প্রোফাইলে নিয়ে যাওয়া হবে। সঙ্গে সঙ্গে প্রথম মাপ প্রোফাইল তৈরি হয়।"
+      />
+
+      <PageGuide
+        items={[
+          ["কেন এই পেজ", "নতুন কাস্টমারের প্রোফাইল খোলা — নাম আর ফোন নম্বরই যথেষ্ট, বাকি তথ্য ঐচ্ছিক।"],
+          ["তৈরি হলেই পরের ধাপ", "প্রোফাইল তৈরি হলে সরাসরি তার মাপ যোগ করার পেজে যাওয়া যাবে।"],
+          ["এরপর অর্ডার", "মাপ সেভ থাকলে “নতুন অর্ডার” পেজে ফোন খুঁজলেই মাপ নিজে থেকে চলে আসবে।"],
+        ]}
       />
 
       {sp.error && (
