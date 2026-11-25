@@ -1,0 +1,4 @@
+allowBuilds:
+  '@embedded-postgres/windows-x64': true
+  core-js: true
+  esbuild: true
