@@ -1,13 +1,12 @@
 import { viewFields } from "@/server/repositories/views";
 import { requireAdminPage } from "@/lib/page-auth";
 import Link from "next/link";
-import { and, asc, eq, gte, inArray, lt } from "drizzle-orm";
+import { asc, eq, gte, inArray } from "drizzle-orm";
 import { Sparkles, Scissors, CheckCircle2, Clock, Users } from "lucide-react";
 import { QuickActions } from "@/components/QuickActions";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { db } from "@/db";
 import {
-  appointments,
   customers,
   fabrics,
   garmentTypes,
@@ -44,7 +43,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { dateShort, daysUntil, isoDate, relativeDay, startOfToday, taka } from "@/lib/format";
+import { dateBn, dateShort, daysUntil, isoDate, relativeDay, startOfToday, taka } from "@/lib/format";
+import { toBnDigits } from "@/lib/units";
+import { listUpcomingAppointments } from "@/server/services/appointment-lists";
 import { isOverdue } from "@/lib/order-status";
 import { autoDistributeTasks, moveTask, updateAssignmentPolicy } from "./actions";
 
@@ -100,17 +101,9 @@ export default async function DashboardPage({
       .select({ amount: payments.amount })
       .from(payments)
       .where(gte(payments.receivedAt, today)),
-    db
-      .select()
-      .from(appointments)
-      .where(
-        and(
-          gte(appointments.startsAt, today),
-          lt(appointments.startsAt, new Date(today.getTime() + 86_400_000)),
-        ),
-      )
-      .orderBy(appointments.startsAt)
-      .limit(8),
+    // Upcoming (today onward), NOT today-only: customers book for
+    // future days, and a today-only list made fresh bookings invisible.
+    listUpcomingAppointments(8),
     db.select().from(fabrics),
     db
       .select()
@@ -500,7 +493,7 @@ export default async function DashboardPage({
         <div className="space-y-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between border-b border-ink/10 pb-3.5">
-              <CardTitle className="text-xl">আজকের অ্যাপয়েন্টমেন্ট</CardTitle>
+              <CardTitle className="text-xl">আসন্ন অ্যাপয়েন্টমেন্ট</CardTitle>
               <Link href="/admin/appointments" className="chalk-link text-[13.5px] text-gold-dark">
                 ক্যালেন্ডার →
               </Link>
@@ -508,20 +501,24 @@ export default async function DashboardPage({
             <CardContent className="pt-3">
               <ul className="divide-y divide-ink/10">
                 {apptRows.length === 0 && (
-                  <li className="py-5 text-[14.5px] text-ink-3">আজ কোনো অ্যাপয়েন্টমেন্ট নেই।</li>
+                  <li className="py-5 text-[14.5px] text-ink-3">কোনো আসন্ন অ্যাপয়েন্টমেন্ট নেই।</li>
                 )}
                 {apptRows.map((a) => (
                   <li key={a.id} className="flex items-center gap-3 py-3">
                     <span className="num rounded-md bg-ink px-2.5 py-1 text-[13px] text-paper">
-                      {new Date(a.startsAt).toLocaleTimeString("en-GB", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        timeZone: "Asia/Dhaka",
-                      })}
+                      {toBnDigits(
+                        new Date(a.startsAt).toLocaleTimeString("en-GB", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          timeZone: "Asia/Dhaka",
+                        }),
+                      )}
                     </span>
                     <span className="flex-1 text-[14.5px]">
                       {a.name}
-                      <span className="block text-[12.5px] text-stone">{a.purpose}</span>
+                      <span className="block text-[12.5px] text-stone">
+                        <span className="num">{dateBn(a.startsAt)}</span> · {a.purpose}
+                      </span>
                     </span>
                     <StatusBadge status={a.status === "confirmed" ? "confirmed" : "draft"} />
                   </li>
