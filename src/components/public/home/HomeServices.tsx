@@ -8,7 +8,7 @@ import { asList, asRecord, asText } from "./content";
 
 export function HomeServices({ heading, sections }: { heading?: PublicSection; sections: PublicSection[] }) {
   if (!sections.length) return null;
-  return <section className="border-y border-ink/10 bg-paper-2/60"><div className="mx-auto max-w-[1280px] px-4 py-14 sm:px-6"><div className="mb-7 flex flex-wrap items-end justify-between gap-4"><div>{heading?.label && <div className="smallcaps text-gold-dark">{heading.label}</div>}<h2 className="mt-2 whitespace-pre-line text-[30px] leading-tight sm:text-[36px]">{heading?.heading || "সার্ভিস ও মূল্য"}</h2>{heading?.body && <p className="mt-2 max-w-2xl text-ink-3">{heading.body}</p>}</div><Link href="/services" className="inline-flex items-center gap-2 text-gold-dark">সব সার্ভিস দেখুন<ArrowRight className="size-4" /></Link></div><ServiceCards sections={sections} /></div></section>;
+  return <section className="border-y border-ink/10 bg-paper-2/60"><div className="mx-auto max-w-[1280px] px-4 py-10 sm:px-6 sm:py-14"><div className="mb-7 flex flex-wrap items-end justify-between gap-4"><div>{heading?.label && <div className="smallcaps text-gold-dark">{heading.label}</div>}<h2 className="mt-2 whitespace-pre-line text-[30px] leading-tight sm:text-[36px]">{heading?.heading || "সার্ভিস ও মূল্য"}</h2>{heading?.body && <p className="mt-2 max-w-2xl text-ink-3">{heading.body}</p>}</div><Link href="/services" className="inline-flex items-center gap-2 text-gold-dark">সব সার্ভিস দেখুন<ArrowRight className="size-4" /></Link></div><ServiceCards sections={sections} /></div></section>;
 }
 
 export function ServiceCards({ sections }: { sections: PublicSection[] }) {

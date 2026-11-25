@@ -114,6 +114,7 @@ export const stockMovements = pgTable("stock_movements", {
 
 export const appointmentRecords = pgTable("appointments", {
   id: uuid("id").primaryKey().defaultRandom(), personId: uuid("person_id").notNull().references(() => people.id), purpose: text("purpose").notNull().default("নতুন মাপ"),
+  garments: text("garments").array().notNull().default(sql`'{}'::text[]`),
   startsAt: timestamp("starts_at", { withTimezone: true }).notNull(), endsAt: timestamp("ends_at", { withTimezone: true }).notNull(), status: text("status").notNull().default("booked"),
   locationType: text("location_type").notNull().default("shop"), address: text("address"), notes: text("notes"), ...timestamps(),
 }, (t) => [index("appts_start_idx").on(t.startsAt), check("appointments_positive_duration", sql`${t.endsAt} > ${t.startsAt}`)]);
@@ -227,6 +228,7 @@ export const fabrics = readable(pgView("fabric_details", {
 
 export const appointments = readable(pgView("appointment_details", {
   id: uuid("id").notNull(), personId: uuid("person_id").notNull(), customerId: uuid("customer_id"), name: text("name").notNull(), phone: text("phone").notNull(), purpose: text("purpose").notNull(),
+  garments: text("garments").array().notNull(),
   startsAt: timestamp("starts_at", { withTimezone: true }).notNull(), endsAt: timestamp("ends_at", { withTimezone: true }).notNull(), status: text("status").notNull(), locationType: text("location_type").notNull(), address: text("address"), notes: text("notes"), ...timestamps(),
 }).as(sql`select a.*, p.name, coalesce(p.phone, '') as phone, c.id as customer_id from appointments a join people p on p.id = a.person_id left join customers c on c.person_id = a.person_id`));
 

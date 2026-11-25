@@ -163,6 +163,32 @@
   }
 }
 
+/* hero: the gold stitch line slowly sews itself across, badge floats */
+.hero-stitch path {
+  stroke-dashoffset: 0;
+  animation: hero-stitch 7s linear infinite;
+}
+@keyframes hero-stitch {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -190;
+  }
+}
+.hero-badge {
+  animation: hero-badge 5.5s ease-in-out infinite;
+}
+@keyframes hero-badge {
+  0%,
+  100% {
+    transform: translateY(0) rotate(3deg);
+  }
+  50% {
+    transform: translateY(-7px) rotate(-2deg);
+  }
+}
+
 .rise {
   animation: rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -179,7 +205,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .chalk-draw,
-  .rise {
+  .rise,
+  .hero-stitch path,
+  .hero-badge {
     animation: none;
     stroke-dashoffset: 0;
   }

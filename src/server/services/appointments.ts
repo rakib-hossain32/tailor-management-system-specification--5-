@@ -1,7 +1,7 @@
 import "server-only";
 import { and, asc, eq, gt, ilike, lt, ne, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { appointmentRecords, appointments } from "@/db/schema";
+import { appointmentRecords, appointments, garmentTypes } from "@/db/schema";
 import { ApiError } from "@/lib/api-route";
 import { text } from "@/lib/api-input";
 import { dhakaDate } from "@/lib/appointments";
@@ -16,7 +16,37 @@ function localTime(start: Date) {
   return new Date(start.getTime() + 6 * 3600000).toISOString().slice(11, 16);
 }
 function dto(row: typeof appointments.$inferSelect) {
-  return { ...row, date: dhakaDate(row.startsAt), slot: localTime(row.startsAt) };
+  return { ...row, garments: row.garments ?? [], date: dhakaDate(row.startsAt), slot: localTime(row.startsAt) };
+}
+/**
+ * "কী বানাতে চান" — names the customer picked on the booking form.
+ * Accepts an array (public form / API) or a comma-separated string
+ * (admin forms). When the shop has active garments in the catalog,
+ * every picked name must be one of them, so the public list always
+ * matches what the admin panel has added and activated.
+ */
+async function garmentNames(input: Input, current?: string[]): Promise<string[]> {
+  const raw = input.garments ?? input.garmentNames;
+  if (raw === undefined) return current ?? [];
+  const list = Array.isArray(raw)
+    ? raw.map((item) => String(item ?? "").trim())
+    : typeof raw === "string"
+      ? raw.split(/[,،]/).map((item) => item.trim())
+      : [];
+  const names = [...new Set(list.filter(Boolean))];
+  if (names.length > 20 || names.some((name) => name.length > 150)) {
+    throw new ApiError(422, "VALIDATION_ERROR", "বানাতে চাওয়া পোশাকের তালিকা সঠিক নয়");
+  }
+  if (names.length) {
+    const active = await db.select({ nameBn: garmentTypes.nameBn }).from(garmentTypes).where(eq(garmentTypes.isActive, true));
+    if (active.length) {
+      const allowed = new Set(active.map((row) => row.nameBn));
+      if (names.some((name) => !allowed.has(name))) {
+        throw new ApiError(422, "VALIDATION_ERROR", "তালিকা থেকে পোশাক বেছে নিন");
+      }
+    }
+  }
+  return names;
 }
 async function lockDates(tx: Transaction, dates: string[]) {
   for (const date of [...new Set(dates)].sort()) await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${"appointment-date:" + date}))`);
@@ -40,6 +70,7 @@ export async function createAppointment(actor: Actor | null, input: Input) {
   const date = required(input.date, "তারিখ", 10), slot = required(input.slot ?? input.time, "সময়", 5);
   await validateBusinessSlot(date, slot);
   const purpose = required(input.purpose, "উদ্দেশ্য", 150);
+  const garments = await garmentNames(input);
   const locationType = choice(input.locationType ?? input.location_type, ["shop", "home"], "স্থান", "shop");
   const address = text(input.address, "ঠিকানা", 1000) || null;
   if (locationType === "home" && (!address || address.length < 5)) throw new ApiError(422, "VALIDATION_ERROR", "বাড়িতে মাপ নেওয়ার ঠিকানা দিন");
@@ -51,7 +82,7 @@ export async function createAppointment(actor: Actor | null, input: Input) {
     await available(tx, window.start, window.end);
     const person = actor && input.personId ? await resolvePerson(tx, {}, uuid(input.personId)) : await resolvePerson(tx, personFields(input));
     if (!person.phone) throw new ApiError(422, "VALIDATION_ERROR", "অ্যাপয়েন্টমেন্টের জন্য ফোন নম্বর প্রয়োজন");
-    const [created] = await tx.insert(appointmentRecords).values({ personId: person.id, purpose, startsAt: window.start, endsAt: window.end, status, locationType, address, notes: text(input.notes, "নোট", 2000) || null }).returning({ id: appointmentRecords.id });
+    const [created] = await tx.insert(appointmentRecords).values({ personId: person.id, purpose, garments, startsAt: window.start, endsAt: window.end, status, locationType, address, notes: text(input.notes, "নোট", 2000) || null }).returning({ id: appointmentRecords.id });
     await recordAudit(tx, { actorId: actor?.userId, action: "create", entity: "appointment", entityId: created.id, details: { personId: person.id, status } });
     return created.id;
   });
@@ -61,6 +92,7 @@ export async function createAppointment(actor: Actor | null, input: Input) {
 export async function updateAppointment(actor: Actor, id: string, input: Input) {
   authorize(actor, "admin");
   const appointmentId = uuid(id);
+  const nextGarments = await garmentNames(input, undefined);
   await db.transaction(async (tx) => {
     const current = present((await tx.select().from(appointmentRecords).where(eq(appointmentRecords.id, appointmentId)).for("update"))[0], "অ্যাপয়েন্টমেন্ট");
     if (input.personId !== undefined && input.personId !== current.personId) throw new ApiError(422, "IDENTITY_IMMUTABLE", "অ্যাপয়েন্টমেন্টের ব্যক্তিকে বদলানো যাবে না");
@@ -86,7 +118,7 @@ export async function updateAppointment(actor: Actor, id: string, input: Input) 
     const locationType = choice(input.locationType, ["shop", "home"], "স্থান", current.locationType);
     const address = input.address === undefined ? current.address : text(input.address, "ঠিকানা", 1000) || null;
     if (locationType === "home" && (!address || address.length < 5)) throw new ApiError(422, "VALIDATION_ERROR", "বাড়িতে মাপ নেওয়ার ঠিকানা দিন");
-    await tx.update(appointmentRecords).set({ status, startsAt, endsAt, purpose: input.purpose === undefined ? current.purpose : required(input.purpose, "উদ্দেশ্য", 150), locationType, address, notes: input.notes === undefined ? current.notes : text(input.notes, "নোট", 2000) || null, updatedAt: new Date() }).where(eq(appointmentRecords.id, appointmentId));
+    await tx.update(appointmentRecords).set({ status, startsAt, endsAt, purpose: input.purpose === undefined ? current.purpose : required(input.purpose, "উদ্দেশ্য", 150), garments: input.garments === undefined && input.garmentNames === undefined ? (current.garments ?? []) : nextGarments, locationType, address, notes: input.notes === undefined ? current.notes : text(input.notes, "নোট", 2000) || null, updatedAt: new Date() }).where(eq(appointmentRecords.id, appointmentId));
     await recordAudit(tx, { actorId: actor.userId, action: "update", entity: "appointment", entityId: appointmentId, details: { fields: changedFields(input), fromStatus: current.status, toStatus: status } });
   });
   return getAppointment(actor, appointmentId);

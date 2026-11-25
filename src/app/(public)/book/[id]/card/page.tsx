@@ -145,6 +145,9 @@ export default async function AppointmentCardPage({
           <div className="text-right">
             <div className="smallcaps text-stone">উদ্দেশ্য</div>
             <div className="mt-0.5 text-[17px] leading-tight font-medium">{a.purpose}</div>
+            {a.garments?.length > 0 && (
+              <div className="text-[12.5px] text-stone">বানাতে চান: {a.garments.join(", ")}</div>
+            )}
             <div className="text-[12.5px] text-stone">
               {a.locationType === "home" ? "হোম ভিজিট" : "শোরুমে"}
             </div>

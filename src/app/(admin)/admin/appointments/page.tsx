@@ -2,7 +2,7 @@ import { requireAdminPage } from "@/lib/page-auth";
 import Link from "next/link";
 import { and, eq, gte, lt } from "drizzle-orm";
 import { db } from "@/db";
-import { appointments } from "@/db/schema";
+import { appointments, garmentTypes } from "@/db/schema";
 import { PageHead, Empty } from "@/components/admin/PageHead";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -58,6 +58,12 @@ export default async function AppointmentsPage({
   await requireAdminPage();
   const sp = await searchParams;
   const date = sp.date && /^\d{4}-\d{2}-\d{2}$/.test(sp.date) ? sp.date : isoDate(startOfToday());
+
+  const garmentRows = await db
+    .select({ nameBn: garmentTypes.nameBn })
+    .from(garmentTypes)
+    .where(eq(garmentTypes.isActive, true))
+    .orderBy(garmentTypes.sortOrder);
 
   const rows = await db
     .select()
@@ -169,6 +175,11 @@ export default async function AppointmentsPage({
                       </TableCell>
                       <TableCell className="text-ink-3">
                         {a.purpose}
+                        {a.garments?.length > 0 && (
+                          <div className="mt-1 text-[13px] text-stone">
+                            বানাতে চান: {a.garments.join(", ")}
+                          </div>
+                        )}
                         {a.locationType === "home" && (
                           <Badge variant="gold" className="ml-2">
                             হোম ভিজিট
@@ -254,6 +265,20 @@ export default async function AppointmentsPage({
                   </SelectContent>
                 </Select>
               </div>
+              {garmentRows.length > 0 && (
+                <fieldset className="space-y-1.5">
+                  <legend className="text-sm font-medium">কী বানাতে চান</legend>
+                  <p className="text-xs text-stone">একাধিক বেছে নেওয়া যাবে — তালিকাটি “ব্যবস্থাপনা → পোশাক ও মাপ” থেকে আসে।</p>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {garmentRows.map((g) => (
+                      <label key={g.nameBn} className="flex cursor-pointer items-center gap-1.5 rounded-full border border-ink/15 px-3 py-1.5 text-sm has-checked:border-gold has-checked:bg-gold-light/50">
+                        <input type="checkbox" name="garments" value={g.nameBn} className="size-3.5" />
+                        {g.nameBn}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              )}
               <div className="space-y-1.5">
                 <Label>তারিখ</Label>
                 <DateField name="date" defaultValue={date} />
