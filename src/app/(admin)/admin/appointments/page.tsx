@@ -7,6 +7,7 @@ import { PageHead, Empty } from "@/components/admin/PageHead";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -313,9 +314,9 @@ export default async function AppointmentsPage({
                   <legend className="text-sm font-medium">কী বানাতে চান</legend>
                   <p className="text-xs text-stone">একাধিক বেছে নেওয়া যাবে — তালিকাটি “ব্যবস্থাপনা → পোশাক ও মাপ” থেকে আসে।</p>
                   <div className="flex flex-wrap gap-2 pt-1">
-                    {garmentRows.map((g) => (
-                      <label key={g.nameBn} className="flex cursor-pointer items-center gap-1.5 rounded-full border border-ink/15 px-3 py-1.5 text-sm has-checked:border-gold has-checked:bg-gold-light/50">
-                        <input type="checkbox" name="garments" value={g.nameBn} className="size-3.5" />
+                    {garmentRows.map((g, gi) => (
+                      <label key={g.nameBn} htmlFor={`gm-${gi}`} className="flex cursor-pointer items-center gap-1.5 rounded-full border border-ink/15 px-3 py-1.5 text-sm has-[[data-state=checked]]:border-gold has-[[data-state=checked]]:bg-gold-light/50">
+                        <Checkbox id={`gm-${gi}`} name="garments" value={g.nameBn} className="size-3.5" />
                         {g.nameBn}
                       </label>
                     ))}

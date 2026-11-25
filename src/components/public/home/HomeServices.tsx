@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { taka } from "@/lib/format";
+import { matchGarmentName } from "@/lib/garment-match";
 import type { PublicGarment, PublicSection } from "@/server/cms/types";
 import { asList, asRecord, asText } from "./content";
 
@@ -17,10 +18,15 @@ export function ServiceCards({ sections, garments = [] }: { sections: PublicSect
     const data = asRecord(section.data);
     const features = asList(data.features).filter((item): item is string => typeof item === "string");
     const price = typeof data.price === "number" || typeof data.price === "string" ? data.price : null;
-    // Booking from a service card preselects that garment on the form —
-    // matched through the catalog code stored on the section.
-    const garmentName = (typeof data.code === "string" && nameByCode.get(data.code)) || section.heading;
-    const bookHref = `/book?garment=${encodeURIComponent(garmentName)}`;
+    // Booking from a service card preselects that garment on the form:
+    // first through the catalog code stored on the section, then by
+    // tolerantly matching the heading against the catalog. When neither
+    // resolves (e.g. a service with no catalog garment yet), link to the
+    // plain booking page — never pass a name that cannot select anything.
+    const garmentName =
+      (typeof data.code === "string" && nameByCode.get(data.code)) ||
+      matchGarmentName(section.heading, garments);
+    const bookHref = garmentName ? `/book?garment=${encodeURIComponent(garmentName)}` : "/book";
     return <article key={section.id} className="paper-card overflow-hidden">{section.imageUrl && <Image src={section.imageUrl} width={1000} height={700} sizes="(max-width: 768px) 100vw, 33vw" alt={section.heading} className="h-48 w-full object-cover" />}<div className="p-5 sm:p-6">{section.label && <div className="smallcaps text-gold-dark">{section.label}</div>}<h3 className="mt-1 text-[23px] leading-snug">{section.heading}</h3><p className="mt-3 text-[15px] leading-relaxed text-ink-3">{section.body}</p><div className="mt-4 flex flex-wrap gap-2 text-xs text-stone">{data.days != null && <span className="rounded-full bg-paper-2 px-3 py-1">সময়: {asText(data.days)}</span>}{data.fabric != null && <span className="rounded-full bg-paper-2 px-3 py-1">কাপড়: {asText(data.fabric)}</span>}</div>{features.length > 0 && <ul className="mt-4 space-y-1.5 text-sm text-ink-3">{features.map((feature) => <li key={feature} className="flex gap-2"><span className="text-gold-dark">✓</span><span>{feature}</span></li>)}</ul>}<div className="mt-5 flex items-center justify-between gap-3 border-t border-ink/10 pt-4"><strong className="num text-xl font-semibold">{price === null ? "" : taka(price)}</strong><Button asChild variant="outline"><Link href={bookHref}>অ্যাপয়েন্টমেন্ট</Link></Button></div></div></article>;
   })}</div>;
 }

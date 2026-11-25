@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { matchGarmentName } from "@/lib/garment-match";
 import { dateShort, relativeDay } from "@/lib/format";
 import { useShop } from "@/components/ShopContext";
 import { useMutationFeedback } from "@/components/feedback/FeedbackProvider";
@@ -50,7 +51,15 @@ export function BookForm({
   const [slot, setSlot] = useState("");
   const [purpose, setPurpose] = useState(PURPOSES[0]);
   const [picked, setPicked] = useState<string[]>(() =>
-    initialGarments.filter((name) => garments.some((g) => g.nameBn === name)),
+    // Tolerant resolution (lib/garment-match): a service card may pass a
+    // catalog name or a marketing heading containing one.
+    Array.from(
+      new Set(
+        initialGarments
+          .map((name) => matchGarmentName(name, garments))
+          .filter((name): name is string => name !== null),
+      ),
+    ),
   );
   const [garmentOpen, setGarmentOpen] = useState(false);
   const [name, setName] = useState("");
