@@ -426,7 +426,7 @@ export default async function OrderDetailPage({
           <section className="paper-card p-5">
             <div className="mb-4 flex flex-wrap gap-2">
               <Button asChild variant="outline" className="w-full">
-                <Link href={`/admin/orders/${o.id}/invoice`}>⎙ ইনভয়েস / মেমো প্রিন্ট</Link>
+                <Link href={`/api/v1/admin/orders/${o.id}/invoice`}>ইনভয়েস / মেমো PDF ডাউনলোড</Link>
               </Button>
             </div>
             <OrderActions orderId={o.id} current={o.status} due={Number(o.dueAmount)} />

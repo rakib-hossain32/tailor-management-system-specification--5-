@@ -9,7 +9,7 @@ import { recordAudit } from "@/server/audit";
 import { resolvePerson, type Transaction } from "@/server/repositories/people";
 import { validateBusinessSlot } from "@/server/cms/booking";
 import { garmentsByAppointment, hasGarmentsColumn, mergeGarmentsIntoNotes } from "./appointment-garments";
-import { authorize, changedFields, choice, page, personFields, present, required, uuid, type Actor, type Input, type ListOptions } from "./ops-common";
+import { authorize, changedFields, choice, page, personFields, present, searchTerms, required, uuid, type Actor, type Input, type ListOptions } from "./ops-common";
 
 const STATES = ["booked", "confirmed", "done", "no_show", "cancelled"];
 const TRANSITIONS: Record<string, string[]> = { booked: ["confirmed", "no_show", "cancelled"], confirmed: ["done", "no_show", "cancelled"], done: [], no_show: ["booked", "confirmed"], cancelled: ["booked", "confirmed"] };
@@ -62,7 +62,7 @@ async function available(tx: Transaction, start: Date, end: Date, excludeId?: st
 }
 export async function listAppointments(actor: Actor, options?: ListOptions) {
   authorize(actor, "admin");
-  const p = page(options), filter = p.q ? or(ilike(appointments.name, "%" + p.q + "%"), ilike(appointments.phone, "%" + p.q + "%")) : undefined;
+  const p = page(options), t = searchTerms(p.q), filter = p.q ? or(ilike(appointments.name, "%" + t.raw + "%"), ilike(appointments.phone, "%" + t.normalized + "%"), t.digits ? ilike(appointments.phone, "%" + t.digits + "%") : undefined) : undefined;
   const [rows, count] = await Promise.all([db.select().from(appointments).where(filter).orderBy(asc(appointments.startsAt)).limit(p.limit).offset(p.offset), db.select({ n: sql<number>`count(*)::int` }).from(appointments).where(filter)]);
   return { rows: await withGarments(rows), total: count[0].n, page: p.page, limit: p.limit };
 }

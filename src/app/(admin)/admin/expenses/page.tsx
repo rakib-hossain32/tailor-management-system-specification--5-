@@ -3,6 +3,7 @@ import { asc, desc, gte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { expenses } from "@/db/schema";
 import { PageHead, Empty } from "@/components/admin/PageHead";
+import { LiveDateFilter } from "@/components/admin/LiveFilters";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -83,12 +84,9 @@ export default async function ExpensesPage({
               <CardTitle>খরচের তালিকা</CardTitle>
               <CardDescription>তারিখ ধরে ফিল্টার করুন</CardDescription>
             </div>
-            <form method="get" className="flex items-center gap-2">
-              <DateField name="from" defaultValue={from} placeholder="থেকে" className="h-9 w-[150px]" />
-              <Button type="submit" size="sm" variant="secondary">
-                দেখুন
-              </Button>
-            </form>
+            <div className="flex items-center gap-2">
+              <LiveDateFilter param="from" value={from} params={{}} placeholder="থেকে" className="h-9 w-[150px]" />
+            </div>
           </CardHeader>
           <CardContent>
             <Table>

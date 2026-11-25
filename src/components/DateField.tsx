@@ -18,12 +18,15 @@ export function DateField({
   placeholder = "তারিখ বাছুন",
   disabledBefore,
   className,
+  onChange,
 }: {
   name: string;
   defaultValue?: string;
   placeholder?: string;
   disabledBefore?: Date;
   className?: string;
+  /** Fires with the ISO date (or "" when cleared) — for live filters. */
+  onChange?: (iso: string) => void;
 }) {
   const [value, setValue] = useState<Date | undefined>(
     defaultValue ? new Date(`${defaultValue}T00:00:00`) : undefined,
@@ -59,6 +62,13 @@ export function DateField({
             onSelect={(d) => {
               setValue(d ?? undefined);
               setOpen(false);
+              if (onChange) {
+                onChange(
+                  d
+                    ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+                    : "",
+                );
+              }
             }}
             disabled={disabledBefore ? { before: disabledBefore } : undefined}
           />
@@ -72,6 +82,7 @@ export function DateField({
                 onClick={() => {
                   setValue(undefined);
                   setOpen(false);
+                  onChange?.("");
                 }}
               >
                 মুছুন

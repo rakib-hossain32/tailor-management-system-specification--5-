@@ -9,6 +9,8 @@ import { Pagination } from "@/components/admin/Pagination";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { PageHead } from "@/components/admin/PageHead";
 import { PageGuide } from "@/components/admin/PageGuide";
+import { LiveSearchInput, LiveSelectFilter } from "@/components/admin/LiveFilters";
+import { ClickableRow } from "@/components/admin/ClickableRow";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -141,42 +143,36 @@ export default async function OrdersPage({
       {/* filter card — every control is exactly h-10, so nothing sits crooked */}
       <Card>
         <CardContent className="pt-5">
-          <form method="get" className="grid grid-cols-1 items-end gap-3 md:grid-cols-[minmax(0,1fr)_220px_auto_auto]">
-            <input type="hidden" name="page" value="1" />
-            {tab !== "all" && <input type="hidden" name="tab" value={tab} />}
+          <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-[minmax(0,1fr)_220px_auto]">
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="or-q">খোঁজ (অর্ডার নং / নাম / ফোন)</Label>
-              <Input
+              <LiveSearchInput
                 id="or-q"
-                name="q"
-                defaultValue={q}
+                value={q}
+                params={{ ...(tab !== "all" ? { tab } : {}), ...(status ? { status } : {}) }}
                 placeholder="TP-2611-0042 বা রহিমউদ্দিন"
                 className="h-10"
               />
             </div>
             <div className="min-w-0 space-y-1.5">
               <Label>স্ট্যাটাস</Label>
-              <Select name="status" defaultValue={status || "all"}>
-                <SelectTrigger aria-label="স্ট্যাটাস" className="h-10">
-                  <SelectValue placeholder="সব স্ট্যাটাস" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">সব স্ট্যাটাস</SelectItem>
-                  {ORDER_STATUSES.map((s) => (
-                    <SelectItem key={s.code} value={s.code}>
-                      {s.labelBn}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <LiveSelectFilter
+                param="status"
+                value={status || "all"}
+                params={{ ...(tab !== "all" ? { tab } : {}), ...(q ? { q } : {}) }}
+                options={[
+                  { value: "all", label: "সব স্ট্যাটাস" },
+                  ...ORDER_STATUSES.map((s) => ({ value: s.code, label: s.labelBn })),
+                ]}
+                ariaLabel="স্ট্যাটাস"
+                className="h-10"
+                placeholder="সব স্ট্যাটাস"
+              />
             </div>
-            <Button type="submit" className="h-10">
-              খুঁজুন
-            </Button>
             <Button asChild type="button" variant="outline" className="h-10">
               <Link href="/admin/orders">রিসেট</Link>
             </Button>
-          </form>
+          </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
             {TABS.map((t) => (
@@ -231,7 +227,7 @@ export default async function OrdersPage({
               {visible.map(({ o, c }) => {
                 const late = isOverdue(o.status, o.deliveryDate);
                 return (
-                  <TableRow key={o.id}>
+                  <ClickableRow key={o.id} href={`/admin/orders/${o.id}`}>
                     <TableCell>
                       <Link href={`/admin/orders/${o.id}`} className="chalk-link code font-medium">
                         {o.orderNo}
@@ -273,7 +269,7 @@ export default async function OrdersPage({
                         <span className="text-stone">—</span>
                       )}
                     </TableCell>
-                  </TableRow>
+                  </ClickableRow>
                 );
               })}
             </TableBody>

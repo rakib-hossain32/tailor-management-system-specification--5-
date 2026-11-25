@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useMutationError } from "@/components/feedback/FeedbackProvider";
+import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { requestJson } from "@/lib/client-api";
 import Link from "next/link";
 import { CalendarIcon, Sparkles, UserCheck, Clock } from "lucide-react";
@@ -213,15 +214,15 @@ function NewOrderFields({
     };
   }, [customerId]);
 
-  // Load initialCustomerId if passed via query string
-  useEffect(() => {
-    if (!initialCustomerId) return;
-    const controller = new AbortController();
-    let alive = true;
-    fetch(`/api/v1/customers/${initialCustomerId}`, { signal: controller.signal })
-      .then((r) => r.json())
-      .then((data) => {
-        if (alive && data?.id) {
+  // Load a customer by id into the wizard — used for the
+  // ?customer= deep link AND for barcode scans (measurement card =
+  // the customer; appointment slip = that appointment's customer).
+  const loadCustomerById = useCallback(
+    async (customerIdToLoad: string) => {
+      try {
+        const res = await fetch(`/api/v1/customers/${customerIdToLoad}`);
+        const data = await res.json();
+        if (data?.id) {
           const hit: CustomerHit = {
             id: data.id,
             name: data.name,
@@ -234,13 +235,22 @@ function NewOrderFields({
           setCustomer(hit);
           setLines((prev) => (prev.length ? prev : [newLine(garments[0], 1)]));
         }
-      })
-      .catch(() => {});
-    return () => {
-      alive = false;
-      controller.abort();
-    };
-  }, [initialCustomerId, garments]);
+      } catch {
+        /* the search box remains available */
+      }
+    },
+    [garments],
+  );
+
+  useEffect(() => {
+    if (!initialCustomerId) return;
+    // Deep-link load (?customer=…): deferred a tick so the fetch —
+    // not the effect body — drives the state updates.
+    const timer = setTimeout(() => {
+      void loadCustomerById(initialCustomerId);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [initialCustomerId, loadCustomerById]);
 
   const draftPayload = useMemo<OrderDraft>(() => ({ customer, profileId, lines, delivery: delivery ? iso(delivery) : "", discount, advance, notes, priority, assignmentMode, method, manualWorkers }),
     [customer, profileId, lines, delivery, discount, advance, notes, priority, assignmentMode, method, manualWorkers]);
@@ -464,17 +474,26 @@ function NewOrderFields({
               <div className="space-y-4">
                 <div className="relative">
                   <Label htmlFor="cw-q">নাম বা ফোন দিয়ে খুঁজুন</Label>
-                  <Input
-                    id="cw-q"
-                    value={query}
-                    onChange={(e) => {
-                      setQuery(e.target.value);
-                      setHits([]);
-                    }}
-                    placeholder="যেমন: ০১৭… বা রহিমউদ্দিন"
-                    className="mt-1.5"
-                    autoComplete="off"
-                  />
+                  <div className="mt-1.5 flex gap-2">
+                    <Input
+                      id="cw-q"
+                      value={query}
+                      onChange={(e) => {
+                        setQuery(e.target.value);
+                        setHits([]);
+                      }}
+                      placeholder="যেমন: ০১৭… বা রহিমউদ্দিন"
+                      className="flex-1"
+                      autoComplete="off"
+                    />
+                    <BarcodeScanner
+                      onResolve={(hit) => {
+                        const cid = hit.type === "customer" ? hit.id : hit.customerId;
+                        if (cid) void loadCustomerById(cid);
+                        else setError("এই অ্যাপয়েন্টমেন্টে কোনো কাস্টমার যুক্ত নেই।");
+                      }}
+                    />
+                  </div>
                   {hits.length > 0 && (
                     <ul className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-md border border-ink/15 bg-white shadow-xl">
                       {hits.map((h) => (

@@ -8,7 +8,7 @@ import { money, text } from "@/lib/api-input";
 import { dhakaDate } from "@/lib/appointments";
 import { recordAudit } from "@/server/audit";
 import { viewFields } from "@/server/repositories/views";
-import { authorize, choice, page, present, uuid, type Actor, type Input, type ListOptions } from "./ops-common";
+import { authorize, choice, page, present, searchTerms, uuid, type Actor, type Input, type ListOptions } from "./ops-common";
 
 function keyValue(value: unknown) {
   if (value == null) return null;
@@ -37,7 +37,7 @@ export async function listPaymentRecords(actor: Actor, options: ListOptions & { 
   authorize(actor);
   const p = page(options);
   const filter = and(options.orderId ? eq(payments.orderId, uuid(options.orderId)) : undefined, options.customerId ? eq(payments.customerId, uuid(options.customerId)) : undefined,
-    p.q ? or(ilike(payments.receiptNo, "%" + p.q + "%"), ilike(orders.orderNo, "%" + p.q + "%"), ilike(customers.name, "%" + p.q + "%")) : undefined);
+    p.q ? or(ilike(payments.receiptNo, "%" + searchTerms(p.q).normalized + "%"), ilike(orders.orderNo, "%" + searchTerms(p.q).normalized + "%"), ilike(customers.name, "%" + p.q + "%")) : undefined);
   const [rows, count] = await Promise.all([
     db.select({ payment: viewFields(payments), orderNo: orders.orderNo, customerName: customers.name }).from(payments).innerJoin(orders, eq(payments.orderId, orders.id)).innerJoin(customers, eq(payments.customerId, customers.id)).where(filter).orderBy(desc(payments.receivedAt)).limit(p.limit).offset(p.offset),
     db.select({ n: sql<number>`count(*)::int` }).from(payments).innerJoin(orders, eq(payments.orderId, orders.id)).innerJoin(customers, eq(payments.customerId, customers.id)).where(filter),

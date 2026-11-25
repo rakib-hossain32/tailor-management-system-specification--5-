@@ -30,7 +30,24 @@ import { digitsOnly } from "@/lib/barcode";
  * box accepts the barcode number typed from the card — the camera is
  * never a hard requirement.
  */
-export function BarcodeScanner({ className }: { className?: string }) {
+export interface BarcodeHit {
+  type: "appointment" | "customer";
+  id: string;
+  customerId?: string | null;
+}
+
+export function BarcodeScanner({
+  className,
+  onResolve,
+}: {
+  className?: string;
+  /**
+   * Embed mode (e.g. the New Order wizard): instead of navigating to
+   * the record, hand the resolved hit to the caller — an appointment
+   * hit also carries its customerId so a form can load that customer.
+   */
+  onResolve?: (hit: BarcodeHit) => void;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,8 +66,8 @@ export function BarcodeScanner({ className }: { className?: string }) {
     const text = (raw ?? "").trim();
     if (!text || busyRef.current) return;
 
-    // Order number → order list search.
-    if (/^TP-\d{4}-\d{4}$/i.test(text)) {
+    // Order number → order list search (navigation mode only).
+    if (!onResolve && /^TP-\d{4}-\d{4}$/i.test(text)) {
       busyRef.current = true;
       goTo(`/admin/orders?q=${text.toUpperCase()}`);
       return;
@@ -70,6 +87,12 @@ export function BarcodeScanner({ className }: { className?: string }) {
         const res = await fetch(`/api/v1/staff/by-code?code=${digits}`);
         const body = await res.json().catch(() => null);
         if (res.ok && body?.data?.id) {
+          if (onResolve) {
+            busyRef.current = false;
+            setOpen(false);
+            onResolve(body.data as BarcodeHit);
+            return;
+          }
           goTo(body.data.type === "customer" ? `/admin/customers/${body.data.id}` : `/scan/${body.data.id}`);
           return;
         }
@@ -82,7 +105,7 @@ export function BarcodeScanner({ className }: { className?: string }) {
     }
     setLastCode(text.slice(0, 120));
     setError("এই কোড চিনতে পারিনি — বারকোডের ১২ ডিজিটের নম্বর বা অর্ডার নম্বর দিন।");
-  }, [goTo]);
+  }, [goTo, onResolve]);
 
   function changeOpen(nextOpen: boolean) {
     if (nextOpen) {

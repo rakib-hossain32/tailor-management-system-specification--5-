@@ -11,7 +11,7 @@ import { viewFields } from "@/server/repositories/views";
 import { recordAudit } from "@/server/audit";
 import { canTransition, statusMeta } from "@/lib/order-status";
 import { getCurrentStageRates } from "./garments";
-import { authorize, bool, changedFields, page, present, uuid, type Actor, type Input, type ListOptions } from "./ops-common";
+import { authorize, bool, changedFields, page, present, searchTerms, uuid, type Actor, type Input, type ListOptions } from "./ops-common";
 const STAGES = ["cutting", "stitching", "finishing"] as const;
 type Stage = (typeof STAGES)[number];
 type Item = { garmentId: string; profileId: string | null; setId: string | null; quantity: number; priceCents: number | null; fabricSource: string; fabricQty: string | null; notes: string | null; styles: Record<string, string> };
@@ -153,7 +153,7 @@ export async function listOrders(actor: Actor, options: ListOptions & { customer
   authorize(actor);
   const p = page(options);
   const filter = and(options.customerId ? eq(orders.customerId, uuid(options.customerId)) : undefined, options.status ? eq(orders.status, text(options.status, "স্ট্যাটাস", 30) ?? "") : undefined,
-    p.q ? sql`(${orders.orderNo} ilike ${"%" + p.q + "%"} or ${customers.name} ilike ${"%" + p.q + "%"})` : undefined);
+    p.q ? sql`(${orders.orderNo} ilike ${"%" + searchTerms(p.q).normalized + "%"} or ${customers.name} ilike ${"%" + p.q + "%"} or ${customers.phone} ilike ${"%" + searchTerms(p.q).normalized + "%"})` : undefined);
   const [rows, count] = await Promise.all([db.select({ o: viewFields(orders), customer: customers.name }).from(orders).innerJoin(customers, eq(orders.customerId, customers.id)).where(filter).orderBy(desc(orders.createdAt)).limit(p.limit).offset(p.offset),
     db.select({ n: sql<number>`count(*)::int` }).from(orders).innerJoin(customers, eq(orders.customerId, customers.id)).where(filter)]);
   return { rows, total: count[0].n, page: p.page, limit: p.limit };

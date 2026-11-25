@@ -1,4 +1,5 @@
 import { requireAdminPage } from "@/lib/page-auth";
+import { ClickableRow } from "@/components/admin/ClickableRow";
 import Link from "next/link";
 import { asc, inArray } from "drizzle-orm";
 import { HardHat, PlusCircle, UserCheck, UserX } from "lucide-react";
@@ -127,7 +128,7 @@ export default async function WorkersPage({
                 {rows.map((w) => {
                   const s = stats.get(w.id) ?? { open: 0, done: 0, earned: 0 };
                   return (
-                    <TableRow key={w.id}>
+                    <ClickableRow key={w.id} href={`/admin/workers/${w.id}`}>
                       <TableCell>
                         {canManage ? <Link href={`/admin/workers/${w.id}`} className="chalk-link font-medium">
                           {w.name}
@@ -170,7 +171,7 @@ export default async function WorkersPage({
                           </Button>
                         </form>
                       </TableCell>
-                    </TableRow>
+                    </ClickableRow>
                   );
                 })}
               </TableBody>

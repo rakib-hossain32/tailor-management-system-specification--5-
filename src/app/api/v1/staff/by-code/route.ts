@@ -41,10 +41,10 @@ export async function GET(request: Request) {
     );
   }
 
-  const apptRows = await db.select({ id: appointments.id }).from(appointments);
+  const apptRows = await db.select({ id: appointments.id, customerId: appointments.customerId }).from(appointments);
   const appt = apptRows.find((r) => recordCode(r.id) === code);
   if (appt) {
-    return NextResponse.json({ data: { type: "appointment", id: appt.id } });
+    return NextResponse.json({ data: { type: "appointment", id: appt.id, customerId: appt.customerId } });
   }
 
   if (isAdminRole(session.role)) {

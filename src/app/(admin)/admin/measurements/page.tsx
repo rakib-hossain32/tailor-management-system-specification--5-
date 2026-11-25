@@ -6,6 +6,8 @@ import { asc, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { customers, garmentTypes, measurementProfiles, measurementSets } from "@/db/schema";
 import { PageHead, Empty } from "@/components/admin/PageHead";
+import { LiveSelectFilter } from "@/components/admin/LiveFilters";
+import { ClickableRow } from "@/components/admin/ClickableRow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -109,38 +111,37 @@ export default async function MeasurementsIndexPage({
 
       <Card>
         <CardContent className="pt-5">
-          <form className="flex flex-wrap items-center gap-3" method="get">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="w-[220px]">
-              <Select name="garment" defaultValue={sp.garment ?? "all"}>
-                <SelectTrigger aria-label="পোশাক ফিল্টার">
-                  <SelectValue placeholder="সব পোশাক" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">সব পোশাক</SelectItem>
-                  {garmentRows.map((g) => (
-                    <SelectItem key={g.id} value={g.id}>
-                      {g.nameBn}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <LiveSelectFilter
+                param="garment"
+                value={sp.garment ?? "all"}
+                params={sp.stale ? { stale: sp.stale } : {}}
+                options={[
+                  { value: "all", label: "সব পোশাক" },
+                  ...garmentRows.map((g) => ({ value: g.id, label: g.nameBn })),
+                ]}
+                ariaLabel="পোশাক ফিল্টার"
+                placeholder="সব পোশাক"
+              />
             </div>
             <div className="w-[220px]">
-              <Select name="stale" defaultValue={sp.stale ?? "all"}>
-                <SelectTrigger aria-label="বয়স ফিল্টার">
-                  <SelectValue placeholder="সব বয়সের মাপ" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">সব সময়ের মাপ</SelectItem>
-                  <SelectItem value="1">১ বছরের বেশি পুরনো</SelectItem>
-                </SelectContent>
-              </Select>
+              <LiveSelectFilter
+                param="stale"
+                value={sp.stale ?? "all"}
+                params={sp.garment ? { garment: sp.garment } : {}}
+                options={[
+                  { value: "all", label: "সব সময়ের মাপ" },
+                  { value: "1", label: "১ বছরের বেশি পুরনো" },
+                ]}
+                ariaLabel="বয়স ফিল্টার"
+                placeholder="সব বয়সের মাপ"
+              />
             </div>
-            <Button type="submit">ফিল্টার করুন</Button>
             <Button asChild type="button" variant="outline">
               <Link href="/admin/measurements">রিসেট</Link>
             </Button>
-          </form>
+          </div>
         </CardContent>
       </Card>
 
@@ -177,7 +178,7 @@ export default async function MeasurementsIndexPage({
                 const age = daysUntil(s.measuredAt);
                 const stale = age !== null && Math.abs(age) > 365;
                 return (
-                  <TableRow key={s.id}>
+                  <ClickableRow key={s.id} href={`/admin/customers/${c.id}?tab=measurements`}>
                     <TableCell>
                       <Link href={`/admin/customers/${c.id}?tab=measurements`} className="chalk-link font-medium">
                         {c.name}
@@ -211,10 +212,10 @@ export default async function MeasurementsIndexPage({
                     </TableCell>
                     <TableCell className="text-right">
                       <Button asChild size="sm" variant="outline">
-                        <Link href={`/admin/measurements/${s.id}/card`}>🖨 কার্ড</Link>
+                        <Link href={`/api/v1/admin/measurements/${s.id}/card`}>কার্ড PDF</Link>
                       </Button>
                     </TableCell>
-                  </TableRow>
+                  </ClickableRow>
                 );
               })}
             </TableBody>

@@ -8,7 +8,7 @@ import { text } from "@/lib/api-input";
 import { formatPhone } from "@/lib/format";
 import { recordAudit } from "@/server/audit";
 import { resolvePerson } from "@/server/repositories/people";
-import { authorize, bool, changedFields, page, personFields, present, strings, uuid, type Actor, type Input, type ListOptions } from "./ops-common";
+import { authorize, bool, changedFields, page, personFields, present, searchTerms, strings, uuid, type Actor, type Input, type ListOptions } from "./ops-common";
 
 const summaryFields = {
   ...viewFields(customers),
@@ -24,8 +24,8 @@ function normalized(input: Input): Input {
 
 export async function listCustomers(actor: Actor, options?: ListOptions & { includeArchived?: boolean }) {
   authorize(actor);
-  const p = page(options), digits = p.q.replace(/\D/g, "");
-  const filter = and(options?.includeArchived ? undefined : eq(customers.isActive, true), p.q ? or(ilike(customers.name, "%" + p.q + "%"), ilike(customers.phone, "%" + p.q + "%"), digits ? ilike(customers.phone, "%" + digits + "%") : undefined) : undefined);
+  const p = page(options), t = searchTerms(p.q);
+  const filter = and(options?.includeArchived ? undefined : eq(customers.isActive, true), p.q ? or(ilike(customers.name, "%" + t.raw + "%"), ilike(customers.phone, "%" + t.normalized + "%"), t.digits ? ilike(customers.phone, "%" + t.digits + "%") : undefined) : undefined);
   const [rows, count] = await Promise.all([db.select(summaryFields).from(customers).where(filter).orderBy(asc(customers.name)).limit(p.limit).offset(p.offset), db.select({ n: sql<number>`count(*)::int` }).from(customers).where(filter)]);
   return { rows: rows.map((row) => ({ ...row, phone: formatPhone(row.phone), open_due: Number(row.open_due) })), total: count[0].n, page: p.page, limit: p.limit };
 }
