@@ -7,15 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { useMutationFeedback } from "@/components/feedback/FeedbackProvider";
 
 export function LoginForm() {
   const router = useRouter();
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [sent, setSent] = useState(false);
-  const [devCode, setDevCode] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string; title?: string } | null>(null);
+  const [msg, setMsg] = useMutationFeedback();
 
   async function requestOtp(e?: React.FormEvent) {
     e?.preventDefault();
@@ -31,9 +31,8 @@ export function LoginForm() {
       if (!res.ok) setMsg({ ok: false, title: "কোড পাঠানো যায়নি", text: data?.error?.message ?? "আবার চেষ্টা করুন" });
       else {
         setSent(true);
-        setDevCode(data.dev_code ?? null);
         setCode("");
-        setMsg({ ok: true, text: data.demo ? "ডেমো কোড তৈরি হয়েছে — ৫ মিনিটের মধ্যে দিন।" : "কোড পাঠানো হয়েছে — ৫ মিনিটের মধ্যে দিন।" });
+        setMsg({ ok: true, text: "লগইন কোডের অনুরোধ গৃহীত হয়েছে।" });
       }
     } catch {
       setMsg({ ok: false, title: "নেটওয়ার্ক সমস্যা", text: "আবার চেষ্টা করুন" });
@@ -74,7 +73,7 @@ export function LoginForm() {
           <Input
             id="lg-phone"
             value={phone}
-            onChange={(e) => { setPhone(e.target.value); setSent(false); setDevCode(null); setCode(""); }}
+            onChange={(e) => { setPhone(e.target.value); setSent(false); setCode(""); }}
             inputMode="tel"
             placeholder="01XXXXXXXXX"
             className="num text-[19px]"
@@ -101,13 +100,6 @@ export function LoginForm() {
               className="num text-[26px] tracking-[0.4em]"
             />
           </div>
-          {devCode && (
-            <Alert variant="warning">
-              <AlertDescription>
-                ডেমো মোড: SMS গেটওয়ে না থাকায় কোড এখানেই দেখানো হচ্ছে — <b className="num">{devCode}</b>
-              </AlertDescription>
-            </Alert>
-          )}
           <Button type="submit" variant="gold" size="lg" className="w-full" disabled={busy || code.length !== 6}>
             {busy ? "যাচাই হচ্ছে…" : "লগইন করুন"}
           </Button>

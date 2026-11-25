@@ -1,3 +1,4 @@
+import { viewFields } from "@/server/repositories/views";
 import { requireAdminPage } from "@/lib/page-auth";
 import Link from "next/link";
 import { asc, eq, sql } from "drizzle-orm";
@@ -13,7 +14,7 @@ export default async function PayrollPage() {
   await requireAdminPage(true);
   const rows = await db
     .select({
-      w: workers,
+      w: viewFields(workers),
       total: sql<string>`coalesce(sum(${tasks.pieceRate}),0)`,
       earned: sql<string>`coalesce(sum(${tasks.pieceRate}) filter (where ${tasks.status} = 'qc_passed'),0)`,
       pending: sql<string>`coalesce(sum(${tasks.pieceRate}) filter (where ${tasks.status} in ('assigned','in_progress','rework','done')),0)`,

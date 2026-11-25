@@ -1,3 +1,5 @@
+import { getPinnedMeasurementSchemas } from "@/server/repositories/measurement-schema";
+import { viewFields } from "@/server/repositories/views";
 import { requireAdminPage } from "@/lib/page-auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -38,7 +40,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
   const { id } = await params;
 
   const head = await db
-    .select({ o: orders, c: customers })
+    .select({ o: viewFields(orders), c: viewFields(customers) })
     .from(orders)
     .innerJoin(customers, eq(orders.customerId, customers.id))
     .where(eq(orders.id, id))
@@ -48,7 +50,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
 
   const [items, pays, shopRows, profiles] = await Promise.all([
     db
-      .select({ oi: orderItems, g: garmentTypes })
+      .select({ oi: orderItems, g: viewFields(garmentTypes) })
       .from(orderItems)
       .innerJoin(garmentTypes, eq(orderItems.garmentTypeId, garmentTypes.id))
       .where(eq(orderItems.orderId, id)),
@@ -62,6 +64,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
   const sets = setIds.length
     ? await db.select().from(measurementSets).where(inArray(measurementSets.id, setIds))
     : [];
+  const schemaById = await getPinnedMeasurementSchemas(sets);
   const setById = new Map(sets.map((s) => [s.id, s]));
   const profileById = new Map(profiles.map((p) => [p.id, p]));
 
@@ -156,7 +159,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
             <tbody>
               {items.map(({ oi, g }, idx) => {
                 const set = oi.measurementSetId ? setById.get(oi.measurementSetId) : undefined;
-                const schema = g.measurementSchema as unknown as MeasurementSchema;
+                const schema = (set ? schemaById.get(set.garmentSchemaVersionId)?.measurementSchema : g.measurementSchema) as unknown as MeasurementSchema;
                 const brief = flattenFields(schema).slice(0, 5);
                 const profile = oi.profileId ? profileById.get(oi.profileId) : undefined;
                 return (

@@ -1,3 +1,5 @@
+import { getPinnedMeasurementSchemas } from "@/server/repositories/measurement-schema";
+import { viewFields } from "@/server/repositories/views";
 import { requireAdminPage } from "@/lib/page-auth";
 import Link from "next/link";
 import { asc, desc, eq } from "drizzle-orm";
@@ -63,13 +65,14 @@ async function loadMeasurementIndex() {
   const garmentById = new Map(garmentRows.map((g) => [g.id, g]));
 
   const sets = await db
-    .select({ s: measurementSets, p: measurementProfiles, c: customers })
+    .select({ s: viewFields(measurementSets), p: viewFields(measurementProfiles), c: viewFields(customers) })
     .from(measurementSets)
     .innerJoin(measurementProfiles, eq(measurementSets.profileId, measurementProfiles.id))
     .innerJoin(customers, eq(measurementProfiles.customerId, customers.id))
     .orderBy(desc(measurementSets.measuredAt))
     .limit(200);
-  return { garmentRows, profileRows, garmentById, sets, now: Date.now() };
+  const schemaById = await getPinnedMeasurementSchemas(sets.map((row) => row.s));
+  return { garmentRows, profileRows, garmentById, sets, schemaById, now: Date.now() };
 }
 
 export default async function MeasurementsIndexPage({
@@ -80,7 +83,7 @@ export default async function MeasurementsIndexPage({
   await requireAdminPage();
   const sp = await searchParams;
 
-  const { garmentRows, profileRows, garmentById, sets, now } = await loadMeasurementIndex();
+  const { garmentRows, profileRows, garmentById, sets, schemaById, now } = await loadMeasurementIndex();
 
   const filtered = sets.filter((r) => {
     if (sp.garment && sp.garment !== "all" && r.s.garmentTypeId !== sp.garment) return false;
@@ -169,7 +172,7 @@ export default async function MeasurementsIndexPage({
               )}
               {filtered.map(({ s, p, c }) => {
                 const g = garmentById.get(s.garmentTypeId);
-                const schema = g?.measurementSchema as unknown as MeasurementSchema | undefined;
+                const schema = schemaById.get(s.garmentSchemaVersionId)?.measurementSchema as unknown as MeasurementSchema | undefined;
                 const brief = flattenFields(schema).slice(0, 4);
                 const age = daysUntil(s.measuredAt);
                 const stale = age !== null && Math.abs(age) > 365;

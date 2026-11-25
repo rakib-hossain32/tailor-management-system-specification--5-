@@ -1,3 +1,5 @@
+import { getPinnedMeasurementSchemas } from "@/server/repositories/measurement-schema";
+import { viewFields } from "@/server/repositories/views";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { asc, eq, inArray } from "drizzle-orm";
@@ -37,13 +39,14 @@ async function loadCustomerMeasurements(id: string) {
   const profileIds = profileRows.map((p) => p.id);
   const sets = profileIds.length
     ? await db
-        .select({ s: measurementSets, p: measurementProfiles })
+        .select({ s: viewFields(measurementSets), p: viewFields(measurementProfiles) })
         .from(measurementSets)
         .innerJoin(measurementProfiles, eq(measurementSets.profileId, measurementProfiles.id))
         .where(inArray(measurementSets.profileId, profileIds))
         .orderBy(asc(measurementSets.measuredAt))
     : [];
-  return { custRows, profileRows, garmentRows, c, garmentById, sets, now: Date.now() };
+  const schemaById = await getPinnedMeasurementSchemas(sets.map((row) => row.s));
+  return { custRows, profileRows, garmentRows, c, garmentById, sets, schemaById, now: Date.now() };
 }
 
 export default async function AccountMeasurementsPage() {
@@ -51,7 +54,7 @@ export default async function AccountMeasurementsPage() {
   if (!session) redirect("/login");
   const id = session.customerId;
 
-  const { custRows, profileRows, garmentRows, c, garmentById, sets, now } = await loadCustomerMeasurements(id);
+  const { custRows, profileRows, garmentRows, c, garmentById, sets, schemaById, now } = await loadCustomerMeasurements(id);
 
   const staleNote = (date: string) => {
     const months = Math.floor((now - new Date(date).getTime()) / (30 * 86_400_000));
@@ -106,7 +109,7 @@ export default async function AccountMeasurementsPage() {
               )}
               {own.map(({ s }) => {
                 const g = garmentById.get(s.garmentTypeId);
-                const schema = g?.measurementSchema as unknown as MeasurementSchema | undefined;
+                const schema = schemaById.get(s.garmentSchemaVersionId)?.measurementSchema as unknown as MeasurementSchema | undefined;
                 const fields = flattenFields(schema);
                 const prev = own.find((x) => x.s.garmentTypeId === s.garmentTypeId && x.s.version === s.version - 1);
                 return (

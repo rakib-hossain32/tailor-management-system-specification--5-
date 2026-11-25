@@ -1,3 +1,4 @@
+import { viewFields } from "@/server/repositories/views";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { asc, desc, eq, inArray } from "drizzle-orm";
@@ -14,7 +15,7 @@ async function loadCustomerOverview(id: string) {
   const [custRows, orderRows, apptRows] = await Promise.all([
     db.select().from(customers).where(eq(customers.id, id)).limit(1),
     db
-      .select({ o: orders })
+      .select({ o: viewFields(orders) })
       .from(orders)
       .where(eq(orders.customerId, id))
       .orderBy(desc(orders.createdAt))
@@ -44,7 +45,7 @@ export default async function AccountHome() {
 
   const items = orderRows.length
     ? await db
-        .select({ oi: orderItems, g: garmentTypes })
+        .select({ oi: orderItems, g: viewFields(garmentTypes) })
         .from(orderItems)
         .innerJoin(garmentTypes, eq(orderItems.garmentTypeId, garmentTypes.id))
         .where(

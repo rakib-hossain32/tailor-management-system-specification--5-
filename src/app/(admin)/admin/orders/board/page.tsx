@@ -1,3 +1,4 @@
+import { viewFields } from "@/server/repositories/views";
 import { requireAdminPage } from "@/lib/page-auth";
 import Link from "next/link";
 import { desc, eq, inArray } from "drizzle-orm";
@@ -23,7 +24,7 @@ const BOARD_COLUMNS = [
 export default async function BoardPage() {
   await requireAdminPage();
   const rows = await db
-    .select({ o: orders, c: customers })
+    .select({ o: viewFields(orders), c: viewFields(customers) })
     .from(orders)
     .innerJoin(customers, eq(orders.customerId, customers.id))
     .where(
@@ -33,7 +34,7 @@ export default async function BoardPage() {
     .limit(300);
 
   const items = await db
-    .select({ oi: orderItems, g: garmentTypes })
+    .select({ oi: orderItems, g: viewFields(garmentTypes) })
     .from(orderItems)
     .innerJoin(garmentTypes, eq(orderItems.garmentTypeId, garmentTypes.id));
   const byOrder = new Map<string, { name: string; qty: number }[]>();

@@ -1,3 +1,4 @@
+import { viewFields } from "@/server/repositories/views";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getStaffSession } from "@/lib/access";
@@ -41,7 +42,7 @@ export default async function WorkerEarnings() {
     active
       ? db
           .select({
-            t: tasks,
+            t: viewFields(tasks),
             orderNo: orders.orderNo,
             garment: garmentTypes.nameBn,
             delivery: orders.deliveryDate,

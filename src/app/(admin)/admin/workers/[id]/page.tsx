@@ -1,3 +1,4 @@
+import { viewFields } from "@/server/repositories/views";
 import { requireAdminPage } from "@/lib/page-auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -37,7 +38,7 @@ export default async function WorkerDetailPage({ params }: { params: Promise<{ i
   const [taskRows, summary] = await Promise.all([
     db
       .select({
-        t: tasks,
+        t: viewFields(tasks),
         orderId: orders.id,
         orderNo: orders.orderNo,
         delivery: orders.deliveryDate,

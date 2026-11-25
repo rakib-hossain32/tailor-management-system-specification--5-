@@ -81,6 +81,7 @@ const GROUPS: NavGroup[] = [
       { href: "/admin/workers/payroll", label: "মজুরি ও পেরোল", icon: Banknote },
       { href: "/admin/notifications", label: "SMS ও নোটিফিকেশন", icon: MessageSquare },
       { href: "/admin/settings", label: "দোকান সেটিংস", icon: Settings },
+      { href: "/admin/manage", label: "তথ্য যোগ ও সম্পাদনা", icon: Settings },
     ],
   },
 ];

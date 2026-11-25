@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { useMutationError } from "@/components/feedback/FeedbackProvider";
 import { nextStatuses, statusMeta } from "@/lib/order-status";
 
 /** Compact status mover used on the kanban board. */
@@ -18,7 +20,7 @@ export function QuickStatus({
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useMutationError();
   const [open, setOpen] = useState(false);
 
   const options = nextStatuses(current);
@@ -28,7 +30,7 @@ export function QuickStatus({
     setBusy(true);
     setError(null);
     try {
-      const payload: Record<string, unknown> = { to, changed_by: "কানবান বোর্ড" };
+      const payload: Record<string, unknown> = { to };
       if (to === "delivered" && due > 0) {
         const reason = window.prompt(`বকেয়া ৳${due} সহ ডেলিভারির কারণ লিখুন:`, "মালিক সম্মত");
         if (!reason) {
@@ -51,6 +53,7 @@ export function QuickStatus({
       if (!res.ok) setError(data?.error?.message ?? "বদলানো যায়নি");
       else {
         setOpen(false);
+        toast.success(`অর্ডার: ${statusMeta(to).labelBn}`);
         router.refresh();
       }
     } catch {

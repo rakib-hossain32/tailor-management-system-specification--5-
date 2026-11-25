@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { customers, orders } from "@/db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { statusMeta, publicProgress, PUBLIC_STEPS } from "@/lib/order-status";
-import { formatPhone } from "@/lib/format";
+import { isValidBdPhone, normalizePhone } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -36,11 +36,14 @@ export async function POST(req: Request) {
     );
   }
 
-  const phone = formatPhone((body.phone ?? "").trim());
+  if (!body || typeof body !== "object" || Array.isArray(body) || typeof body.phone !== "string" || typeof body.order_no !== "string" || body.phone.length > 40 || body.order_no.length > 64) {
+    return NextResponse.json({ error: { code: "VALIDATION_ERROR", message: "ফোন নম্বর ও অর্ডার নম্বর সঠিকভাবে দিন" } }, { status: 400 });
+  }
+  const phone = normalizePhone(body.phone.trim());
   const orderNo = (body.order_no ?? "").trim().toUpperCase();
   const ip = req.headers.get("x-forwarded-for") ?? "local";
 
-  if (!phone || !orderNo) {
+  if (!isValidBdPhone(phone) || !orderNo) {
     return NextResponse.json(
       { error: { code: "VALIDATION_ERROR", message: "ফোন নম্বর ও অর্ডার নম্বর দুটোই দিন" } },
       { status: 400 },
@@ -54,10 +57,10 @@ export async function POST(req: Request) {
   }
 
   const rows = await db
-    .select({ order: orders, customerPhone: customers.phone, customerName: customers.name })
+    .select({ orderNo: orders.orderNo, status: orders.status, deliveryDate: orders.deliveryDate, trialDate: orders.trialDate, dueAmount: orders.dueAmount, priority: orders.priority })
     .from(orders)
     .innerJoin(customers, eq(orders.customerId, customers.id))
-    .where(and(eq(orders.orderNo, orderNo), eq(customers.phone, `+88${phone.replace(/^\+88/, "")}`)))
+    .where(and(eq(orders.orderNo, orderNo), eq(customers.phone, phone)))
     .limit(1);
 
   if (rows.length === 0) {
@@ -67,7 +70,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const o = rows[0].order;
+  const o = rows[0];
   const meta = statusMeta(o.status);
   const step = publicProgress(o.status);
 

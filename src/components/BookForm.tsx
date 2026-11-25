@@ -14,6 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { dateShort, relativeDay } from "@/lib/format";
+import { useShop } from "@/components/ShopContext";
+import { useMutationFeedback } from "@/components/feedback/FeedbackProvider";
 
 interface Slot {
   start: string;
@@ -23,10 +25,11 @@ interface Slot {
 const PURPOSES = ["নতুন মাপ", "ট্রায়াল", "ডেলিভারি/পিকআপ", "পরামর্শ", "অল্টারেশন"];
 
 export function BookForm() {
+  const shop = useShop();
   const [date, setDate] = useState<Date | undefined>(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
-    if (d.getDay() === 5) d.setDate(d.getDate() + 1);
+    for (let i = 0; i < 7 && shop.hours.find((row) => row.weekday === d.getDay())?.closed; i++) d.setDate(d.getDate() + 1);
     return d;
   });
   const [calOpen, setCalOpen] = useState(false);
@@ -40,7 +43,7 @@ export function BookForm() {
   const [homeVisit, setHomeVisit] = useState(false);
   const [busy, setBusy] = useState(false);
   const [booking, setBooking] = useState<{ id: string; date: string; slot: string; purpose: string } | null>(null);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string; title?: string } | null>(null);
+  const [msg, setMsg] = useMutationFeedback();
 
   const iso = date
     ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
@@ -96,7 +99,7 @@ export function BookForm() {
         setMsg({
           ok: true,
           title: "অ্যাপয়েন্টমেন্ট নিশ্চিত হয়েছে ✓",
-          text: `${data.date} · ${data.slot_label} · ${purpose}। নিশ্চিতকরণ SMS পাঠানো হয়েছে — নিচ থেকে কার্ডটি PDF আকারে ডাউনলোড করুন।`,
+          text: `${data.date} · ${data.slot_label} · ${purpose}। নিচ থেকে অ্যাপয়েন্টমেন্ট কার্ডটি ডাউনলোড করুন।`,
         });
         setNotes("");
         setSlot("");
@@ -115,7 +118,7 @@ export function BookForm() {
     <form onSubmit={submit} className="luxury-card p-6 sm:p-8">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label>আসার তারিখ (শুক্রবার ছুটি)</Label>
+          <Label>আসার তারিখ</Label>
           <Popover open={calOpen} onOpenChange={setCalOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -141,7 +144,7 @@ export function BookForm() {
                   }
                   setCalOpen(false);
                 }}
-                disabled={{ before: today, dayOfWeek: [5] }}
+                disabled={{ before: today, dayOfWeek: shop.hours.filter((row) => row.closed).map((row) => row.weekday) }}
               />
             </PopoverContent>
           </Popover>
@@ -165,7 +168,7 @@ export function BookForm() {
       </div>
 
       <div className="mt-5 space-y-2">
-        <Label>উপলভ্য সময় স্লট (৩০ মিনিট করে)</Label>
+        <Label>উপলভ্য সময় স্লট</Label>
         {slots.length === 0 ? (
           <p className="rounded-md border border-dashed border-ink/20 bg-white/80 px-4 py-3 text-[14.5px] text-stone">
             এই তারিখে কোনো খালি স্লট নেই — অন্য তারিখ বেছে নিন বা ফোন করুন।
@@ -215,7 +218,7 @@ export function BookForm() {
           onCheckedChange={(v) => setHomeVisit(v === true)}
           aria-label="হোম ভিজিট"
         />
-        বিয়ে বা পারিবারিক বড় অর্ডারের জন্য হোম ভিজিট (সিনিয়র মাস্টার বাসায় গিয়ে মাপ নেবেন)
+        হোম ভিজিটের অনুরোধ
       </label>
 
       {homeVisit && (

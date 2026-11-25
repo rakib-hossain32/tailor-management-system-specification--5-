@@ -1,3 +1,5 @@
+import { getPinnedMeasurementSchemas } from "@/server/repositories/measurement-schema";
+import { viewFields } from "@/server/repositories/views";
 import { requireAdminPage } from "@/lib/page-auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -57,7 +59,7 @@ export default async function OrderDetailPage({
   const sp = await searchParams;
 
   const head = await db
-    .select({ o: orders, c: customers })
+    .select({ o: viewFields(orders), c: viewFields(customers) })
     .from(orders)
     .innerJoin(customers, eq(orders.customerId, customers.id))
     .where(eq(orders.id, id))
@@ -67,7 +69,7 @@ export default async function OrderDetailPage({
 
   const [items, history, pays, profiles, activeWorkers] = await Promise.all([
     db
-      .select({ oi: orderItems, g: garmentTypes })
+      .select({ oi: orderItems, g: viewFields(garmentTypes) })
       .from(orderItems)
       .innerJoin(garmentTypes, eq(orderItems.garmentTypeId, garmentTypes.id))
       .where(eq(orderItems.orderId, id)),
@@ -97,6 +99,7 @@ export default async function OrderDetailPage({
   const sets = setIds.length
     ? await db.select().from(measurementSets).where(inArray(measurementSets.id, setIds))
     : [];
+  const schemaById = await getPinnedMeasurementSchemas(sets);
   const setById = new Map(sets.map((s) => [s.id, s]));
   const profileById = new Map(profiles.map((p) => [p.id, p]));
 
@@ -208,8 +211,9 @@ export default async function OrderDetailPage({
               {items.map(({ oi, g }) => {
                 const set = oi.measurementSetId ? setById.get(oi.measurementSetId) : undefined;
                 const profile = oi.profileId ? profileById.get(oi.profileId) : undefined;
-                const schema = g.measurementSchema as unknown as MeasurementSchema;
-                const styleSchema = g.styleSchema as unknown as StyleSchema;
+                const pinned = set ? schemaById.get(set.garmentSchemaVersionId) : undefined;
+                const schema = (pinned?.measurementSchema ?? g.measurementSchema) as unknown as MeasurementSchema;
+                const styleSchema = (pinned?.styleSchema ?? g.styleSchema) as unknown as StyleSchema;
                 const fields = (schema.groups ?? [])
                   .flatMap((gr) => gr.fields)
                   .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));

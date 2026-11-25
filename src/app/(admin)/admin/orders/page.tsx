@@ -1,3 +1,4 @@
+import { viewFields } from "@/server/repositories/views";
 import { requireAdminPage } from "@/lib/page-auth";
 import Link from "next/link";
 import { desc, eq, ilike, or, sql } from "drizzle-orm";
@@ -62,7 +63,7 @@ export default async function OrdersPage({
   }
 
   const rows = await db
-    .select({ o: orders, c: customers })
+    .select({ o: viewFields(orders), c: viewFields(customers) })
     .from(orders)
     .innerJoin(customers, eq(orders.customerId, customers.id))
     .where(conds.length ? sql.join(conds, sql` AND `) : undefined)
@@ -70,7 +71,7 @@ export default async function OrdersPage({
     .limit(500);
 
   const items = await db
-    .select({ oi: orderItems, g: garmentTypes })
+    .select({ oi: orderItems, g: viewFields(garmentTypes) })
     .from(orderItems)
     .innerJoin(garmentTypes, eq(orderItems.garmentTypeId, garmentTypes.id));
   const byOrder = new Map<string, string[]>();

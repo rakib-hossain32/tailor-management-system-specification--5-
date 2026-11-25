@@ -1,3 +1,5 @@
+import { getPinnedMeasurementSchemas } from "@/server/repositories/measurement-schema";
+import { viewFields } from "@/server/repositories/views";
 import { requireAdminPage } from "@/lib/page-auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -44,7 +46,7 @@ export default async function CustomerDetailPage({
   const [profiles, custOrders, custPayments] = await Promise.all([
     db.select().from(measurementProfiles).where(eq(measurementProfiles.customerId, id)),
     db
-      .select({ o: orders })
+      .select({ o: viewFields(orders) })
       .from(orders)
       .where(eq(orders.customerId, id))
       .orderBy(desc(orders.createdAt)),
@@ -65,12 +67,13 @@ export default async function CustomerDetailPage({
         .orderBy(asc(measurementSets.version))
     : [];
   const garments = await db.select().from(garmentTypes);
+  const schemaById = await getPinnedMeasurementSchemas(sets);
   const garmentById = new Map(garments.map((g) => [g.id, g]));
 
   const orderIds = custOrders.map((r) => r.o.id);
   const items = orderIds.length
     ? await db
-        .select({ oi: orderItems, g: garmentTypes })
+        .select({ oi: orderItems, g: viewFields(garmentTypes) })
         .from(orderItems)
         .innerJoin(garmentTypes, eq(orderItems.garmentTypeId, garmentTypes.id))
         .where(inArray(orderItems.orderId, orderIds))
@@ -247,7 +250,7 @@ export default async function CustomerDetailPage({
                     .filter((s) => s.isCurrent || own.filter((x) => x.garmentTypeId === s.garmentTypeId).length <= 2)
                     .map((s) => {
                       const g = garmentById.get(s.garmentTypeId);
-                      const schema = g?.measurementSchema as unknown as MeasurementSchema | undefined;
+                      const schema = schemaById.get(s.garmentSchemaVersionId)?.measurementSchema as unknown as MeasurementSchema | undefined;
                       const fields = flattenFields(schema).slice(0, 8);
                       const prevForGarment = own.find(
                         (x) => x.garmentTypeId === s.garmentTypeId && x.version === s.version - 1,

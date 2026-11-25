@@ -174,7 +174,7 @@ export default async function InventoryPage({
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="inv-note">নোট (সরবরাহকারী/অর্ডার নং)</Label>
-                  <Textarea id="inv-note" name="note" rows={2} />
+                  <Textarea id="inv-note" name="note" rows={2} required />
                 </div>
                 <Button type="submit" className="w-full">
                   স্টক আপডেট করুন

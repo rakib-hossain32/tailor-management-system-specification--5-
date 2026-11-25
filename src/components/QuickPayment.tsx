@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useMutationFeedback } from "@/components/feedback/FeedbackProvider";
 import {
   Select,
   SelectContent,
@@ -25,7 +26,6 @@ const METHODS = [
 export function QuickPayment({
   orderId,
   due,
-  receivedBy = "রুবেল হোসেন",
 }: {
   orderId: string;
   due: number;
@@ -36,7 +36,7 @@ export function QuickPayment({
   const [method, setMethod] = useState("cash");
   const [txn, setTxn] = useState("");
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [msg, setMsg] = useMutationFeedback();
   const pendingPayment = useRef<{ fingerprint: string; key: string; kind: string } | null>(null);
   const submitting = useRef(false);
 
@@ -62,7 +62,6 @@ export function QuickPayment({
           method,
           txnId: txn || undefined,
           kind: pendingPayment.current.kind,
-          receivedBy,
           idempotencyKey: pendingPayment.current.key,
         }),
       });

@@ -1,3 +1,5 @@
+import { getPinnedMeasurementSchemas } from "@/server/repositories/measurement-schema";
+import { viewFields } from "@/server/repositories/views";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getStaffSession } from "@/lib/access";
@@ -27,14 +29,14 @@ export default async function WorkerTaskPage({ params }: { params: Promise<{ id:
 
   const rows = await db
     .select({
-      t: tasks,
+      t: viewFields(tasks),
       orderNo: orders.orderNo,
       delivery: orders.deliveryDate,
       orderStatus: orders.status,
       notes: orders.notes,
       oi: orderItems,
-      g: garmentTypes,
-      w: workers,
+      g: viewFields(garmentTypes),
+      w: viewFields(workers),
     })
     .from(tasks)
     .innerJoin(orderItems, eq(tasks.orderItemId, orderItems.id))
@@ -54,10 +56,11 @@ export default async function WorkerTaskPage({ params }: { params: Promise<{ id:
     ? (await db.select().from(measurementProfiles).where(eq(measurementProfiles.id, r.oi.profileId)).limit(1))[0]
     : undefined;
 
-  const schema = r.g.measurementSchema as unknown as MeasurementSchema;
+  const pinned = set ? (await getPinnedMeasurementSchemas([set])).get(set.garmentSchemaVersionId) : undefined;
+  const schema = (pinned?.measurementSchema ?? r.g.measurementSchema) as unknown as MeasurementSchema;
   const fields = flattenFields(schema);
   const styles = (r.oi.styleOverrides ?? {}) as Record<string, string>;
-  const styleOptions = ((r.g.styleSchema ?? { options: [] }) as { options: { key: string; label_bn: string; choices?: { value: string; label_bn: string }[] }[] }).options;
+  const styleOptions = ((pinned?.styleSchema ?? r.g.styleSchema ?? { options: [] }) as { options: { key: string; label_bn: string; choices?: { value: string; label_bn: string }[] }[] }).options;
 
   const back = `/worker?w=${r.t.workerId ?? ""}`;
 

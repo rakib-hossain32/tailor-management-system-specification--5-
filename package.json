@@ -18,6 +18,8 @@
     "db:migrate": "drizzle-kit migrate --config=drizzle.config.ts",
     "db:push": "drizzle-kit push --config=drizzle.config.ts",
     "db:seed": "node scripts/seed.mjs",
+    "db:initialize": "node --conditions=react-server --import tsx scripts/initialize.ts",
+    "media:sync": "node --conditions=react-server --import tsx scripts/media-sync.ts",
     "check": "npm run lint && npm run typecheck",
     "test:integration": "node scripts/integration-check.mjs"
   },
@@ -33,6 +35,7 @@
     "@radix-ui/react-tabs": "^1.2.1",
     "@types/qrcode": "^1.5.6",
     "class-variance-authority": "^0.7.1",
+    "cloudinary": "2.11.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "dotenv": "17.3.1",
@@ -47,7 +50,10 @@
     "react": "19.2.6",
     "react-day-picker": "^10.0.2",
     "react-dom": "19.2.6",
-    "tailwind-merge": "^3.7.1"
+    "server-only": "0.0.1",
+    "sonner": "2.0.8",
+    "tailwind-merge": "^3.7.1",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.1.17",
@@ -61,6 +67,7 @@
     "eslint-config-next": "16.4.6",
     "postcss": "8.5.23",
     "tailwindcss": "4.1.17",
+    "tsx": "4.23.15",
     "typescript": "5.9.3"
   }
 }

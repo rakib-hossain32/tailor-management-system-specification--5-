@@ -1,3 +1,4 @@
+import { viewFields } from "@/server/repositories/views";
 import { requireAdminPage } from "@/lib/page-auth";
 import Link from "next/link";
 import { desc, eq, ilike, or, sql } from "drizzle-orm";
@@ -31,7 +32,7 @@ export default async function CustomersPage({
 
   const rows = await db
     .select({
-      c: customers,
+      c: viewFields(customers),
       orderCount: sql<number>`(select count(*)::int from orders where customer_id = ${customers.id})`,
     })
     .from(customers)

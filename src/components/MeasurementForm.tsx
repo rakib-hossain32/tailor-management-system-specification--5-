@@ -2,6 +2,8 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { useMutationError } from "@/components/feedback/FeedbackProvider";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -116,7 +118,7 @@ export function MeasurementForm({
   const [changeNote, setChangeNote] = useState("");
   const [active, setActive] = useState<{ key: string; hint?: string; label: string } | null>(null);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useMutationError();
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
@@ -225,6 +227,7 @@ export function MeasurementForm({
       } else {
         const warn = data.warnings?.length ? ` · ${data.warnings.length}টি সতর্কতা` : "";
         setSavedMsg(`✓ মাপ v${data.version} সেভ হয়েছে${warn}`);
+        toast.success(`মাপ v${data.version} সংরক্ষিত হয়েছে${warn}`);
         setTimeout(() => router.push(returnTo ?? `/admin/customers/${customerId}`), 900);
         setTimeout(() => router.refresh(), 950);
       }

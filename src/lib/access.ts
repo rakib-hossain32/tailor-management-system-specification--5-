@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { customers, users, workers } from "@/db/schema";
+import { customers, users, userAccounts, workers } from "@/db/schema";
 import { isAdminRole, readStaffSession, STAFF_COOKIE, verifyPassword } from "@/lib/auth";
 import { isValidBdPhone, normalizePhone } from "@/lib/format";
 import { SESSION_COOKIE, unsign } from "@/lib/session";
@@ -35,7 +35,7 @@ export async function authenticateStaff(identifier: string, password: string): P
     if (!worker) throw new AuthError(403, "এই অ্যাকাউন্টে সক্রিয় কারিগর প্রোফাইল যুক্ত নেই", "WORKER_NOT_LINKED");
     workerId = worker.id;
   }
-  await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
+  await db.update(userAccounts).set({ lastLoginAt: new Date() }).where(eq(userAccounts.id, user.id));
   return { id: user.id, userId: user.id, name: user.name, role: user.role, workerId };
 }
 
@@ -81,7 +81,7 @@ export async function requireWorker(): Promise<StaffSession & { workerId: string
 export async function getCustomerSession(): Promise<{ customerId: string } | null> {
   const id = unsign((await cookies()).get(SESSION_COOKIE)?.value);
   if (!id || !UUID.test(id)) return null;
-  const [customer] = await db.select({ id: customers.id }).from(customers).where(and(eq(customers.id, id), eq(customers.portalEnabled, true))).limit(1);
+  const [customer] = await db.select({ id: customers.id }).from(customers).where(and(eq(customers.id, id), eq(customers.portalEnabled, true), eq(customers.isActive, true))).limit(1);
   return customer ? { customerId: customer.id } : null;
 }
 

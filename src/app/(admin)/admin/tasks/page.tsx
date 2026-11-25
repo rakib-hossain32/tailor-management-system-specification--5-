@@ -1,3 +1,4 @@
+import { viewFields } from "@/server/repositories/views";
 import { requireAdminPage } from "@/lib/page-auth";
 import Link from "next/link";
 import { asc, eq } from "drizzle-orm";
@@ -52,7 +53,7 @@ export default async function TasksPage({
   const [allRows, workerRows] = await Promise.all([
     db
       .select({
-        t: tasks,
+        t: viewFields(tasks),
         orderId: orders.id,
         orderNo: orders.orderNo,
         delivery: orders.deliveryDate,

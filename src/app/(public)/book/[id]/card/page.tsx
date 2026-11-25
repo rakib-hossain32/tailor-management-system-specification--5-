@@ -1,3 +1,4 @@
+import { viewFields } from "@/server/repositories/views";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
@@ -36,7 +37,7 @@ export default async function AppointmentCardPage({
   const sp = await searchParams;
 
   const rows = await db
-    .select({ a: appointments, c: customers })
+    .select({ a: viewFields(appointments), c: viewFields(customers) })
     .from(appointments)
     .leftJoin(customers, eq(appointments.customerId, customers.id))
     .where(eq(appointments.id, id))

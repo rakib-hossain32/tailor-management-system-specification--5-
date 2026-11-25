@@ -1,5 +1,6 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
+import { databaseConnectionUrl } from "./url";
 
 const databaseUrl = process.env.DATABASE_URL;
 
@@ -8,17 +9,17 @@ if (!databaseUrl) {
 }
 
 const globalForDb = globalThis as typeof globalThis & {
-  __arenaNextJsPostgresqlPool?: Pool;
+  __tailorPostgresql?: { url: string; pool: Pool };
 };
-
-export const pool =
-  globalForDb.__arenaNextJsPostgresqlPool ??
-  new Pool({
-    connectionString: databaseUrl,
-  });
+const resolvedUrl = databaseConnectionUrl(databaseUrl);
+const cached = globalForDb.__tailorPostgresql;
+export const pool = cached?.url === resolvedUrl ? cached.pool : new Pool({
+  connectionString: resolvedUrl, max: 10, connectionTimeoutMillis: 10000, idleTimeoutMillis: 30000,
+});
 
 if (process.env.NODE_ENV !== "production") {
-  globalForDb.__arenaNextJsPostgresqlPool = pool;
+  if (cached && cached.pool !== pool) void cached.pool.end().catch(() => {});
+  globalForDb.__tailorPostgresql = { url: resolvedUrl, pool };
 }
 
 export const db = drizzle(pool);

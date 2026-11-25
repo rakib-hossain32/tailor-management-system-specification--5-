@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { useMutationError } from "@/components/feedback/FeedbackProvider";
+import { requestJson } from "@/lib/client-api";
 import Link from "next/link";
 import { CalendarIcon, Sparkles, UserCheck, Clock } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -22,8 +25,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { dateShort, relativeDay } from "@/lib/format";
-
-const DRAFT_KEY = "tailorpro:new-order-draft";
 
 interface Garment {
   id: string;
@@ -89,6 +90,8 @@ interface OrderDraft {
   notes?: string;
   priority?: "normal" | "urgent";
   assignmentMode?: "auto" | "manual" | "unassigned";
+  method?: string;
+  manualWorkers?: { cutting: string; stitching: string; finishing: string };
 }
 
 interface NewOrderFormProps {
@@ -98,21 +101,6 @@ interface NewOrderFormProps {
   initialCustomerId?: string;
 }
 
-function subscribeToDraft() {
-  // This is the draft at form mount. Later writes belong to this form instance.
-  return () => {};
-}
-
-function readDraft(raw: string | null): OrderDraft | null {
-  if (!raw) return null;
-  try {
-    const draft = JSON.parse(raw) as OrderDraft;
-    return draft?.customer?.id ? draft : null;
-  } catch {
-    return null;
-  }
-}
-
 function newLine(garment: Garment, key: number): Line {
   return {
     key,
@@ -120,27 +108,33 @@ function newLine(garment: Garment, key: number): Line {
     qty: 1,
     price: Number(garment.basePrice),
     fabricSource: "shop",
-    fabricQty: String(garment.fabricEstimate ?? 2.5),
+    fabricQty: garment.fabricEstimate == null ? "" : String(garment.fabricEstimate),
     notes: "",
   };
 }
 
 export function NewOrderForm(props: NewOrderFormProps) {
-  const [getDraftSnapshot] = useState(() => {
-    let snapshot: string | null | undefined;
-    return () => {
-      if (snapshot === undefined) {
-        try {
-          snapshot = props.initialCustomerId ? null : sessionStorage.getItem(DRAFT_KEY);
-        } catch {
-          snapshot = null;
-        }
-      }
-      return snapshot;
-    };
-  });
-  const raw = useSyncExternalStore(subscribeToDraft, getDraftSnapshot, () => null);
-  return <NewOrderFields key={raw === null ? "new" : "restored"} {...props} draft={readDraft(raw)} />;
+  if (!props.garments.length) return <div className="paper-card p-6"><p>অর্ডার তৈরির আগে পোশাকের ধরন যোগ করুন।</p><Link href="/admin/manage" className="mt-3 inline-block text-gold-dark">তথ্য ব্যবস্থাপনা</Link></div>;
+  return <OrderDraftLoader key={props.initialCustomerId || "saved-draft"} {...props} />;
+}
+
+function OrderDraftLoader(props: NewOrderFormProps) {
+  const [state, setState] = useState<{ status: "loading" | "ready" | "error"; draft: OrderDraft | null; error?: string }>(
+    { status: props.initialCustomerId ? "ready" : "loading", draft: null },
+  );
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    if (props.initialCustomerId) return;
+    const controller = new AbortController();
+    let alive = true;
+    requestJson<{ draft: OrderDraft | null }>("/api/v1/drafts", { signal: controller.signal })
+      .then((result) => { if (alive) setState({ status: "ready", draft: result.draft }); })
+      .catch((error: Error) => { if (alive) { setState({ status: "error", draft: null, error: error.message }); toast.error(error.message); } });
+    return () => { alive = false; controller.abort(); };
+  }, [props.initialCustomerId, attempt]);
+  if (state.status === "loading") return <div className="paper-card p-6" role="status">অর্ডার ফর্ম খোলা হচ্ছে…</div>;
+  if (state.status === "error") return <div className="paper-card p-6"><p>{state.error}</p><Button className="mt-4" onClick={() => { setState({ status: "loading", draft: null }); setAttempt((value) => value + 1); }}>আবার চেষ্টা করুন</Button></div>;
+  return <NewOrderFields {...props} draft={state.draft} />;
 }
 
 function NewOrderFields({
@@ -162,7 +156,7 @@ function NewOrderFields({
   const [delivery, setDelivery] = useState<Date | undefined>(() => {
     if (draft?.delivery) return new Date(`${draft.delivery}T00:00:00`);
     const d = new Date();
-    d.setDate(d.getDate() + 7);
+    d.setDate(d.getDate() + garments[0].defaultDeliveryDays);
     return d;
   });
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -174,20 +168,22 @@ function NewOrderFields({
     cutting: string;
     stitching: string;
     finishing: string;
-  }>({
+  }>(draft?.manualWorkers ?? {
     cutting: workers.find((w) => w.role === "cutting")?.id ?? "unassigned",
     stitching: workers.find((w) => w.role === "stitching")?.id ?? "unassigned",
     finishing: workers.find((w) => w.role === "finishing")?.id ?? "unassigned",
   });
   const [discount, setDiscount] = useState(draft?.discount ?? "0");
   const [advance, setAdvance] = useState(draft?.advance ?? "0");
-  const [method, setMethod] = useState("cash");
+  const [method, setMethod] = useState(draft?.method ?? "cash");
   const [notes, setNotes] = useState(draft?.notes ?? "");
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useMutationError();
   const seq = useRef(Math.max(1, ...lines.map((line) => line.key)));
+  const draftQueue = useRef<Promise<void>>(Promise.resolve());
+  const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const iso = (d: Date) =>
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -246,28 +242,32 @@ function NewOrderFields({
     };
   }, [initialCustomerId, garments]);
 
-  // persist draft
+  const draftPayload = useMemo<OrderDraft>(() => ({ customer, profileId, lines, delivery: delivery ? iso(delivery) : "", discount, advance, notes, priority, assignmentMode, method, manualWorkers }),
+    [customer, profileId, lines, delivery, discount, advance, notes, priority, assignmentMode, method, manualWorkers]);
+  const persistDraft = useCallback((payload: OrderDraft) => {
+    const next = draftQueue.current.catch(() => {}).then(async () => {
+      await requestJson("/api/v1/drafts", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ draft: payload }) });
+      toast.success("খসড়া সংরক্ষিত হয়েছে।", { id: "order-draft-save", duration: 1500 });
+    });
+    draftQueue.current = next;
+    return next;
+  }, []);
   useEffect(() => {
-    if (!customer) return;
-    try {
-      sessionStorage.setItem(
-        DRAFT_KEY,
-        JSON.stringify({
-          customer,
-          profileId,
-          lines,
-          delivery: delivery ? iso(delivery) : "",
-          discount,
-          advance,
-          notes,
-          priority,
-          assignmentMode,
-        }),
-      );
-    } catch {
-      /* ignore */
-    }
-  }, [customer, profileId, lines, delivery, discount, advance, notes, priority, assignmentMode]);
+    if (!draftPayload.customer) return;
+    draftTimer.current = setTimeout(() => {
+      draftTimer.current = null;
+      void persistDraft(draftPayload).catch((error: Error) => toast.error(error.message, { id: "order-draft-save" }));
+    }, 800);
+    return () => { if (draftTimer.current) clearTimeout(draftTimer.current); };
+  }, [draftPayload, persistDraft]);
+
+  async function openMeasurements(event: React.MouseEvent<HTMLAnchorElement>, href: string) {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    if (draftTimer.current) clearTimeout(draftTimer.current);
+    try { await persistDraft(draftPayload); router.push(href); }
+    catch (error) { setError(error instanceof Error ? error.message : "খসড়া সংরক্ষণ হয়নি।"); }
+  }
 
   // customer search
   useEffect(() => {
@@ -346,6 +346,7 @@ function NewOrderFields({
       });
       setNewName("");
       setNewPhone("");
+      toast.success("কাস্টমার সংরক্ষিত হয়েছে।");
     } catch {
       setError("নেটওয়ার্ক সমস্যা");
     }
@@ -370,7 +371,9 @@ function NewOrderFields({
     if (!profileId) return setError("মাপ কার (প্রোফাইল) বেছে নিন");
     if (missing > 0) return setError(`${missing}টি পোশাকের মাপ নেই — “মাপ নিন” বাটনে গিয়ে মাপ নিন`);
     setBusy(true);
+    if (draftTimer.current) clearTimeout(draftTimer.current);
     try {
+      await draftQueue.current.catch(() => {});
       const res = await fetch("/api/v1/orders", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -399,11 +402,8 @@ function NewOrderFields({
       if (!res.ok) {
         setError(data?.error?.message ?? "অর্ডার তৈরি হয়নি");
       } else {
-        try {
-          sessionStorage.removeItem(DRAFT_KEY);
-        } catch {
-          /* ignore */
-        }
+        toast.success("অর্ডার সংরক্ষিত হয়েছে।");
+        await requestJson("/api/v1/drafts", { method: "DELETE" }).catch((error: Error) => toast.error(error.message));
         router.push(`/admin/orders/${data.id}`);
       }
     } catch {
@@ -577,6 +577,7 @@ function NewOrderFields({
                     <Button asChild type="button" variant="gold">
                       <Link
                         href={`/admin/customers/${customer.id}/measurements/new?profile=${profileId}&return=/admin/orders/new`}
+                        onClick={(event) => void openMeasurements(event, `/admin/customers/${customer.id}/measurements/new?profile=${profileId}&return=/admin/orders/new`)}
                       >
                         + নতুন মাপ নিন
                       </Link>
@@ -604,7 +605,7 @@ function NewOrderFields({
                                           ...l,
                                           garmentId: ng.id,
                                           price: Number(ng.basePrice),
-                                          fabricQty: String(ng.fabricEstimate ?? 2.5),
+                                          fabricQty: ng.fabricEstimate == null ? "" : String(ng.fabricEstimate),
                                         }
                                       : l,
                                   ),
@@ -698,7 +699,7 @@ function NewOrderFields({
                               <Badge variant="success">
                                 ✓ মাপ v{set.version} · {ageDays(set.measured_at)} দিন আগে
                               </Badge>
-                              <Link href={measureHref(line)} className="chalk-link font-medium text-gold-dark">
+                              <Link href={measureHref(line)} onClick={(event) => void openMeasurements(event, measureHref(line))} className="chalk-link font-medium text-gold-dark">
                                 মাপ দেখুন / আপডেট করুন →
                               </Link>
                             </>
@@ -706,7 +707,7 @@ function NewOrderFields({
                             <>
                               <Badge variant="destructive">এই পোশাকের মাপ নেই</Badge>
                               <Button asChild type="button" variant="gold" size="sm">
-                                <Link href={measureHref(line)}>এখনই মাপ নিন →</Link>
+                                <Link href={measureHref(line)} onClick={(event) => void openMeasurements(event, measureHref(line))}>এখনই মাপ নিন →</Link>
                               </Button>
                             </>
                           )}

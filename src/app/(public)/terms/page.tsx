@@ -1,45 +1,4 @@
-import Link from "next/link";
-import { PublicPage, SectionHead } from "@/components/public/PublicPage";
-
-export const metadata = { title: "শর্তাবলি" };
-
-const TERMS: [string, string][] = [
-  ["মূল্য ও অ্যাডভান্স", "চূড়ান্ত মূল্য অর্ডার নিশ্চিত করার সময় জানানো হয়। অর্ডার শুরুর জন্য ন্যূনতম ৫০% অ্যাডভান্স বাধ্যতামূলক; বাকি টাকা ডেলিভারির সময়।"],
-  ["ডেলিভারি সময়", "সাধারণত শার্ট ৪ দিন, প্যান্ট ৬ দিন, পাঞ্জাবি ৭ দিন, কামিজ ৮ দিন। মৌসুমি চাপে সময় বাড়তে পারে — এক্ষেত্রে আগেই জানানো হয়।"],
-  ["ট্রায়াল ও সংশোধন", "ট্রায়ালে ফিট ঠিক না হলে ডেলিভারির ৭ দিনের মধ্যে একবার সংশোধন ফ্রি। কাস্টমারের নিজের পরিবর্তনের দায়ভার থাকলে সেটি আলাদা হিসাব হয়।"],
-  ["বাতিল ও ফেরত", "কাটিং শুরু হওয়ার আগে বাতিল করলে অ্যাডভান্স ফেরতযোগ্য (ক্যাশবুক লগসহ)। কাটিংয়ের পর কাপড়ের খরচ বাদ দিয়ে হিসাব করা হয়। বিক্রিত/কাটা পণ্য ফেরত নেওয়া হয় না।"],
-  ["কাস্টমারের কাপড়", "নিজের কাপড় দিলে গ্রহণ রসিদসহ রেকর্ড হয়। কাপড়ের মানজনিত ত্রুটি বা অপর্যাপ্ত পরিমাণে দেরি হলে দায় কাস্টমারের।"],
-  ["মাপের দায়িত্ব", "মাপ অফলাইনে মাস্টার নেন। কাস্টমারের স্ব-মাপ বা অযাচাইকৃত মাপ ব্যবহার করলে ট্রায়াল বাধ্যতামূলক এবং সংশোধন নীতি আলাদা প্রযোজ্য।"],
-  ["গোপনীয়তা", "মাপ ও যোগাযোগ তথ্য কেবল অর্ডার সম্পন্ন করতে ব্যবহার হয়। বিস্তারিত দেখুন গোপনীয়তা নীতি।"],
-  ["যোগাযোগ", "রহমান টেইলার্স, ১২/বি, ধানমন্ডি, ঢাকা-১২০৯ · ফোন ০১৭১১-০০০০০১।"],
-];
-
-export default function TermsPage() {
-  return (
-    <PublicPage>
-      <section className="mx-auto max-w-[900px] px-4 py-12 sm:px-6">
-        <SectionHead
-          eyebrow="নীতিমালা"
-          title="সেবার শর্তাবলি"
-          sub="অর্ডারের আগে পড়ে নিন — সংক্ষিপ্ত, সহজ ভাষায়।"
-        />
-        <dl className="space-y-4">
-          {TERMS.map(([t, d]) => (
-            <div key={t} className="paper-card p-5">
-              <dt className="text-[19px]">{t}</dt>
-              <dd className="mt-1.5 text-[16px] leading-relaxed text-ink-2">{d}</dd>
-            </div>
-          ))}
-        </dl>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Link href="/privacy" className="rounded-sm border border-ink/30 px-5 py-3 text-[15.5px] hover:bg-ink/5">
-            গোপনীয়তা নীতি
-          </Link>
-          <Link href="/contact" className="rounded-sm bg-ink px-5 py-3 text-[15.5px] text-paper hover:bg-ink-2">
-            প্রশ্ন করুন
-          </Link>
-        </div>
-      </section>
-    </PublicPage>
-  );
-}
+import { StoredPublicPage } from "@/components/public/StoredPublicPage";
+import { publicPageMetadata } from "@/lib/public-page";
+export async function generateMetadata() { return publicPageMetadata("terms"); }
+export default function Page() { return <StoredPublicPage slug="terms" title="শর্তাবলি" />; }

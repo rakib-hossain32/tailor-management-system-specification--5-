@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { PhoneCall, CalendarCheck } from "lucide-react";
+import { MobileActions } from "@/components/public/MobileActions";
 import { SiteHeader } from "@/components/public/SiteHeader";
 import { SiteFooter } from "@/components/public/SiteFooter";
 
@@ -14,24 +13,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       <main className="flex-1">{children}</main>
       <SiteFooter />
 
-      {/* mobile sticky action bar */}
-      <div className="no-print fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 border-t border-gold/40 bg-ink text-paper shadow-2xl sm:hidden">
-        <a
-          href="tel:+8801711000001"
-          className="flex items-center justify-center gap-2 border-r border-white/15 py-3 text-[14.5px] font-medium text-white active:bg-white/10"
-        >
-          <PhoneCall className="size-4 text-gold" />
-          কল করুন
-        </a>
-        <Link
-          href="/book"
-          className="flex items-center justify-center gap-2 bg-gold py-3 text-[14.5px] font-semibold text-ink active:bg-gold-light"
-        >
-          <CalendarCheck className="size-4" />
-          অ্যাপয়েন্টমেন্ট
-        </Link>
-      </div>
-      <div className="h-12 sm:hidden" aria-hidden />
+      <MobileActions />
     </div>
   );
 }

@@ -1,3 +1,5 @@
+import { getPinnedMeasurementSchemas } from "@/server/repositories/measurement-schema";
+import { viewFields } from "@/server/repositories/views";
 import { requireAdminPage } from "@/lib/page-auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -44,10 +46,10 @@ export default async function MeasurementCardPage({
 
   const rows = await db
     .select({
-      s: measurementSets,
-      p: measurementProfiles,
-      c: customers,
-      g: garmentTypes,
+      s: viewFields(measurementSets),
+      p: viewFields(measurementProfiles),
+      c: viewFields(customers),
+      g: viewFields(garmentTypes),
     })
     .from(measurementSets)
     .innerJoin(measurementProfiles, eq(measurementSets.profileId, measurementProfiles.id))
@@ -62,7 +64,7 @@ export default async function MeasurementCardPage({
   const [shopRows, recentOrders] = await Promise.all([
     db.select().from(settings).where(eq(settings.key, "shop")).limit(1),
     db
-      .select({ o: orders })
+      .select({ o: viewFields(orders) })
       .from(orders)
       .where(eq(orders.customerId, c.id))
       .orderBy(descOrd(orders.createdAt))
@@ -70,8 +72,9 @@ export default async function MeasurementCardPage({
   ]);
   const shop = (shopRows[0]?.value ?? {}) as Record<string, string>;
 
-  const schema = g.measurementSchema as unknown as MeasurementSchema;
-  const styleSchema = (g.styleSchema ?? { options: [] }) as unknown as StyleSchema;
+  const pinned = (await getPinnedMeasurementSchemas([s])).get(s.garmentSchemaVersionId)!;
+  const schema = pinned.measurementSchema as unknown as MeasurementSchema;
+  const styleSchema = pinned.styleSchema as unknown as StyleSchema;
   const fields = flattenFields(schema);
   const styles = (s.styles ?? {}) as Record<string, string>;
   const values = (s.values ?? {}) as Record<string, number>;

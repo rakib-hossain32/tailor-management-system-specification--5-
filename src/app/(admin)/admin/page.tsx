@@ -1,3 +1,4 @@
+import { viewFields } from "@/server/repositories/views";
 import { requireAdminPage } from "@/lib/page-auth";
 import Link from "next/link";
 import { and, asc, eq, gte, inArray, lt } from "drizzle-orm";
@@ -84,13 +85,13 @@ export default async function DashboardPage({
     policyRow,
   ] = await Promise.all([
     db
-      .select({ o: orders, c: customers })
+      .select({ o: viewFields(orders), c: viewFields(customers) })
       .from(orders)
       .innerJoin(customers, eq(orders.customerId, customers.id))
       .orderBy(orders.deliveryDate)
       .limit(500),
     db
-      .select({ oi: orderItems, g: garmentTypes })
+      .select({ oi: orderItems, g: viewFields(garmentTypes) })
       .from(orderItems)
       .innerJoin(garmentTypes, eq(orderItems.garmentTypeId, garmentTypes.id))
       .limit(2000),
@@ -117,7 +118,7 @@ export default async function DashboardPage({
       .orderBy(asc(workers.name)),
     db
       .select({
-        t: tasks,
+        t: viewFields(tasks),
         orderId: orders.id,
         orderNo: orders.orderNo,
         delivery: orders.deliveryDate,

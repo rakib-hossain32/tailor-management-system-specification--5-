@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { useMutationError } from "@/components/feedback/FeedbackProvider";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +26,6 @@ export function OrderActions({
   orderId,
   current,
   due,
-  changedBy = "মোঃ সাইফুল ইসলাম",
 }: {
   orderId: string;
   current: string;
@@ -33,7 +34,7 @@ export function OrderActions({
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useMutationError();
   const [note, setNote] = useState("");
   const [pending, setPending] = useState<string | null>(null);
   const [reason, setReason] = useState("");
@@ -44,7 +45,7 @@ export function OrderActions({
     setBusy(to);
     setError(null);
     try {
-      const payload: Record<string, unknown> = { to, note: note || undefined, changed_by: changedBy };
+      const payload: Record<string, unknown> = { to, note: note || undefined };
       if (to === "delivered" && due > 0) {
         payload.override_due = true;
         payload.override_reason = overrideReason;
@@ -62,6 +63,7 @@ export function OrderActions({
         setNote("");
         setReason("");
         setPending(null);
+        toast.success(`অর্ডার: ${statusMeta(to).labelBn}`);
         router.refresh();
       }
     } catch {

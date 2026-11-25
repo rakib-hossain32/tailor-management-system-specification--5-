@@ -1,5 +1,5 @@
 /** Hand-drawn brand mark: a needle threading a tape-measure loop. */
-export function Logo({ size = 40, className = "" }: { size?: number; className?: string }) {
+export function Logo({ size = 40, className = "", label = "দোকানের লোগো" }: { size?: number; className?: string; label?: string }) {
   return (
     <svg
       viewBox="0 0 48 48"
@@ -7,7 +7,7 @@ export function Logo({ size = 40, className = "" }: { size?: number; className?:
       height={size}
       className={className}
       role="img"
-      aria-label="রহমান টেইলার্স"
+      aria-label={label}
     >
       <circle cx="24" cy="24" r="21" fill="none" stroke="currentColor" strokeWidth="2" />
       {/* tape ticks around the ring */}
@@ -17,10 +17,10 @@ export function Logo({ size = 40, className = "" }: { size?: number; className?:
         return (
           <line
             key={i}
-            x1={24 + Math.cos(a) * inner}
-            y1={24 + Math.sin(a) * inner}
-            x2={24 + Math.cos(a) * 21}
-            y2={24 + Math.sin(a) * 21}
+            x1={Number((24 + Math.cos(a) * inner).toFixed(3))}
+            y1={Number((24 + Math.sin(a) * inner).toFixed(3))}
+            x2={Number((24 + Math.cos(a) * 21).toFixed(3))}
+            y2={Number((24 + Math.sin(a) * 21).toFixed(3))}
             stroke="currentColor"
             strokeWidth={i % 3 === 0 ? 1.6 : 0.9}
             opacity={i % 3 === 0 ? 0.9 : 0.55}

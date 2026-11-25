@@ -1,3 +1,4 @@
+import { viewFields } from "@/server/repositories/views";
 import Link from "next/link";
 import { asc, eq } from "drizzle-orm";
 import {
@@ -55,7 +56,7 @@ export default async function WorkerHome({
   const allTasks = active
     ? await db
         .select({
-          t: tasks,
+          t: viewFields(tasks),
           orderId: orders.id,
           orderNo: orders.orderNo,
           delivery: orders.deliveryDate,

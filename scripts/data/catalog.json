@@ -1,0 +1,1463 @@
+{
+  "version": 1,
+  "description": "Editable technical garment and wage configuration. No customers, users, orders, payments or earned events.",
+  "garments": [
+    {
+      "code": "shirt",
+      "nameBn": "শার্ট",
+      "nameEn": "Shirt",
+      "category": "gents",
+      "measurementSchema": {
+        "version": 1,
+        "unit": "cm",
+        "groups": [
+          {
+            "key": "upper_body",
+            "label_bn": "উপরের অংশ",
+            "label_en": "Upper body",
+            "fields": [
+              {
+                "key": "length",
+                "label_bn": "লম্বা",
+                "label_en": "Length",
+                "type": "measurement",
+                "required": true,
+                "min": 55,
+                "max": 110,
+                "help_bn": "কাঁধের সর্বোচ্চ বিন্দু থেকে কাঙ্ক্ষিত দৈর্ঘ্য পর্যন্ত",
+                "diagram_hint": "length",
+                "order": 1
+              },
+              {
+                "key": "chest",
+                "label_bn": "বুক",
+                "label_en": "Chest",
+                "type": "measurement",
+                "required": true,
+                "min": 60,
+                "max": 160,
+                "help_bn": "বগলের নিচ দিয়ে বুকের সবচেয়ে চওড়া অংশ ঘিরে",
+                "diagram_hint": "chest",
+                "order": 2
+              },
+              {
+                "key": "waist",
+                "label_bn": "পেট/কোমর",
+                "label_en": "Waist",
+                "type": "measurement",
+                "required": true,
+                "min": 55,
+                "max": 160,
+                "help_bn": "নাভির সামান্য ওপরে ঘিরে",
+                "diagram_hint": "waist",
+                "order": 3
+              },
+              {
+                "key": "hip",
+                "label_bn": "হিপ",
+                "label_en": "Hip",
+                "type": "measurement",
+                "required": false,
+                "min": 60,
+                "max": 170,
+                "help_bn": "ঐচ্ছিক",
+                "diagram_hint": "hip",
+                "order": 4
+              },
+              {
+                "key": "shoulder",
+                "label_bn": "কাঁধ",
+                "label_en": "Shoulder",
+                "type": "measurement",
+                "required": true,
+                "min": 30,
+                "max": 60,
+                "help_bn": "এক কাঁধের প্রান্ত থেকে অন্য প্রান্ত, পিঠের ওপর দিয়ে",
+                "diagram_hint": "shoulder",
+                "order": 5
+              },
+              {
+                "key": "sleeve",
+                "label_bn": "হাতা",
+                "label_en": "Sleeve",
+                "type": "measurement",
+                "required": true,
+                "min": 40,
+                "max": 75,
+                "help_bn": "কাঁধের প্রান্ত থেকে কব্জি পর্যন্ত",
+                "diagram_hint": "sleeve",
+                "order": 6
+              },
+              {
+                "key": "cuff",
+                "label_bn": "হাতার মুহুরি",
+                "label_en": "Cuff",
+                "type": "measurement",
+                "required": true,
+                "min": 18,
+                "max": 40,
+                "help_bn": "কব্জি ঘিরে, আরামের জন্য সামান্য অতিরিক্ত",
+                "diagram_hint": "cuff",
+                "order": 7
+              },
+              {
+                "key": "bicep",
+                "label_bn": "বাইসেপ/বাহু",
+                "label_en": "Bicep",
+                "type": "measurement",
+                "required": false,
+                "min": 22,
+                "max": 60,
+                "help_bn": "",
+                "diagram_hint": "bicep",
+                "order": 8
+              },
+              {
+                "key": "neck",
+                "label_bn": "গলা",
+                "label_en": "Neck",
+                "type": "measurement",
+                "required": true,
+                "min": 25,
+                "max": 55,
+                "help_bn": "গলার গোড়া ঘিরে, এক আঙুল জায়গা রেখে",
+                "diagram_hint": "neck",
+                "order": 9
+              },
+              {
+                "key": "collar_height",
+                "label_bn": "কলার উচ্চতা",
+                "label_en": "Collar height",
+                "type": "number",
+                "required": false,
+                "min": 2,
+                "max": 12,
+                "help_bn": "",
+                "diagram_hint": "collar",
+                "order": 10
+              }
+            ]
+          }
+        ],
+        "validation_rules": [
+          {
+            "type": "ratio",
+            "fields": [
+              "chest",
+              "waist"
+            ],
+            "min": 0.7,
+            "max": 1.4,
+            "severity": "warning",
+            "message_bn": "বুক ও কোমরের অনুপাত অস্বাভাবিক, আবার মেপে দেখুন"
+          },
+          {
+            "type": "compare",
+            "fields": [
+              "shoulder"
+            ],
+            "max_of": [
+              "chest"
+            ],
+            "divisor": 2,
+            "slack": 5,
+            "severity": "warning",
+            "message_bn": "কাঁধের মাপ সন্দেহজনক — আবার যাচাই করুন"
+          }
+        ]
+      },
+      "styleSchema": {
+        "options": [
+          {
+            "key": "collar",
+            "label_bn": "কলার",
+            "type": "select",
+            "choices": [
+              {
+                "value": "regular",
+                "label_bn": "রেগুলার"
+              },
+              {
+                "value": "mandarin",
+                "label_bn": "ব্যান্ড/ম্যান্ডারিন"
+              },
+              {
+                "value": "button_down",
+                "label_bn": "বাটন-ডাউন"
+              },
+              {
+                "value": "cutaway",
+                "label_bn": "কাটওয়ে"
+              }
+            ]
+          },
+          {
+            "key": "cuff_type",
+            "label_bn": "কাফ",
+            "type": "select",
+            "choices": [
+              {
+                "value": "round",
+                "label_bn": "গোল"
+              },
+              {
+                "value": "square",
+                "label_bn": "চৌকো"
+              },
+              {
+                "value": "one_button",
+                "label_bn": "এক বোতাম"
+              },
+              {
+                "value": "double",
+                "label_bn": "ডাবল বাটন"
+              }
+            ]
+          },
+          {
+            "key": "pocket",
+            "label_bn": "পকেট",
+            "type": "select",
+            "choices": [
+              {
+                "value": "none",
+                "label_bn": "নেই"
+              },
+              {
+                "value": "one",
+                "label_bn": "একটি"
+              },
+              {
+                "value": "two",
+                "label_bn": "দুটি"
+              },
+              {
+                "value": "pocket_square",
+                "label_bn": "স্কয়ার পকেট"
+              }
+            ]
+          },
+          {
+            "key": "placket",
+            "label_bn": "প্লাকেট",
+            "type": "select",
+            "choices": [
+              {
+                "value": "normal",
+                "label_bn": "সাধারণ"
+              },
+              {
+                "value": "hidden",
+                "label_bn": "লুকানো"
+              },
+              {
+                "value": "piper",
+                "label_bn": "পাইপার"
+              }
+            ]
+          },
+          {
+            "key": "fit",
+            "label_bn": "ফিট",
+            "type": "select",
+            "choices": [
+              {
+                "value": "slim",
+                "label_bn": "স্লিম"
+              },
+              {
+                "value": "regular",
+                "label_bn": "রেগুলার"
+              },
+              {
+                "value": "loose",
+                "label_bn": "ঢিলা"
+              }
+            ]
+          },
+          {
+            "key": "button",
+            "label_bn": "বোতাম",
+            "type": "select",
+            "choices": [
+              {
+                "value": "normal",
+                "label_bn": "সাধারণ"
+              },
+              {
+                "value": "pearl",
+                "label_bn": "মোতিয়া"
+              },
+              {
+                "value": "horn",
+                "label_bn": "শিং"
+              }
+            ]
+          }
+        ]
+      },
+      "basePrice": 950,
+      "defaultDeliveryDays": 4,
+      "defaultFabricEstimate": 2.25,
+      "sortOrder": 0,
+      "stageRates": {
+        "cutting": 60,
+        "stitching": 160,
+        "finishing": 70
+      }
+    },
+    {
+      "code": "panjabi",
+      "nameBn": "পাঞ্জাবি",
+      "nameEn": "Panjabi",
+      "category": "gents",
+      "measurementSchema": {
+        "version": 1,
+        "unit": "cm",
+        "groups": [
+          {
+            "key": "upper_body",
+            "label_bn": "উপরের অংশ",
+            "label_en": "Upper body",
+            "fields": [
+              {
+                "key": "length",
+                "label_bn": "লম্বা",
+                "label_en": "Length",
+                "type": "measurement",
+                "required": true,
+                "min": 70,
+                "max": 140,
+                "help_bn": "কাঁধের সর্বোচ্চ বিন্দু থেকে কাঙ্ক্ষিত দৈর্ঘ্য",
+                "diagram_hint": "length",
+                "order": 1
+              },
+              {
+                "key": "chest",
+                "label_bn": "বুক",
+                "label_en": "Chest",
+                "type": "measurement",
+                "required": true,
+                "min": 60,
+                "max": 160,
+                "help_bn": "",
+                "diagram_hint": "chest",
+                "order": 2
+              },
+              {
+                "key": "waist",
+                "label_bn": "পেট",
+                "label_en": "Waist",
+                "type": "measurement",
+                "required": true,
+                "min": 55,
+                "max": 160,
+                "help_bn": "",
+                "diagram_hint": "waist",
+                "order": 3
+              },
+              {
+                "key": "hem",
+                "label_bn": "ঘের/নিচের ঘের",
+                "label_en": "Bottom hem",
+                "type": "measurement",
+                "required": true,
+                "min": 70,
+                "max": 200,
+                "help_bn": "নিচের গোড়ার চওড়া",
+                "diagram_hint": "hem",
+                "order": 4
+              },
+              {
+                "key": "shoulder",
+                "label_bn": "কাঁধ",
+                "label_en": "Shoulder",
+                "type": "measurement",
+                "required": true,
+                "min": 30,
+                "max": 60,
+                "help_bn": "",
+                "diagram_hint": "shoulder",
+                "order": 5
+              },
+              {
+                "key": "sleeve",
+                "label_bn": "হাতা",
+                "label_en": "Sleeve",
+                "type": "measurement",
+                "required": true,
+                "min": 40,
+                "max": 75,
+                "help_bn": "",
+                "diagram_hint": "sleeve",
+                "order": 6
+              },
+              {
+                "key": "cuff",
+                "label_bn": "হাতার মুহুরি",
+                "label_en": "Cuff",
+                "type": "measurement",
+                "required": true,
+                "min": 18,
+                "max": 40,
+                "help_bn": "",
+                "diagram_hint": "cuff",
+                "order": 7
+              },
+              {
+                "key": "neck",
+                "label_bn": "গলা",
+                "label_en": "Neck",
+                "type": "measurement",
+                "required": true,
+                "min": 25,
+                "max": 55,
+                "help_bn": "",
+                "diagram_hint": "neck",
+                "order": 8
+              },
+              {
+                "key": "front_neck_depth",
+                "label_bn": "গলার সামনের গভীরতা",
+                "label_en": "Front neck depth",
+                "type": "measurement",
+                "required": false,
+                "min": 3,
+                "max": 30,
+                "help_bn": "",
+                "diagram_hint": "neck",
+                "order": 9
+              },
+              {
+                "key": "back_neck_depth",
+                "label_bn": "গলার পেছনের গভীরতা",
+                "label_en": "Back neck depth",
+                "type": "measurement",
+                "required": false,
+                "min": 2,
+                "max": 25,
+                "help_bn": "",
+                "diagram_hint": "neck",
+                "order": 10
+              }
+            ]
+          }
+        ],
+        "validation_rules": [
+          {
+            "type": "ratio",
+            "fields": [
+              "chest",
+              "waist"
+            ],
+            "min": 0.7,
+            "max": 1.4,
+            "severity": "warning",
+            "message_bn": "বুক ও পেটের অনুপাত অস্বাভাবিক, আবার মেপে দেখুন"
+          }
+        ]
+      },
+      "styleSchema": {
+        "options": [
+          {
+            "key": "collar",
+            "label_bn": "কলার/ব্যান্ড",
+            "type": "select",
+            "choices": [
+              {
+                "value": "ban",
+                "label_bn": "ব্যান্ড"
+              },
+              {
+                "value": "classic",
+                "label_bn": "ক্লাসিক"
+              },
+              {
+                "value": " chinese ",
+                "label_bn": "চায়নিজ"
+              }
+            ]
+          },
+          {
+            "key": "placket",
+            "label_bn": "প্লাকেট",
+            "type": "select",
+            "choices": [
+              {
+                "value": "full",
+                "label_bn": "ফুল"
+              },
+              {
+                "value": "half",
+                "label_bn": "আধা"
+              },
+              {
+                "value": "hidden",
+                "label_bn": "লুকানো"
+              }
+            ]
+          },
+          {
+            "key": "pocket",
+            "label_bn": "পকেট",
+            "type": "select",
+            "choices": [
+              {
+                "value": "none",
+                "label_bn": "নেই"
+              },
+              {
+                "value": "one",
+                "label_bn": "একটি"
+              },
+              {
+                "value": "two",
+                "label_bn": "দুটি"
+              }
+            ]
+          },
+          {
+            "key": "side_cut",
+            "label_bn": "সাইড কাট",
+            "type": "select",
+            "choices": [
+              {
+                "value": "normal",
+                "label_bn": "সাধারণ"
+              },
+              {
+                "value": "high",
+                "label_bn": "উঁচু"
+              }
+            ]
+          },
+          {
+            "key": "embroidery",
+            "label_bn": "কাজ/এমব্রয়ডারি",
+            "type": "select",
+            "choices": [
+              {
+                "value": "none",
+                "label_bn": "নেই"
+              },
+              {
+                "value": "light",
+                "label_bn": "হালকা"
+              },
+              {
+                "value": "heavy",
+                "label_bn": "ভারী"
+              }
+            ]
+          },
+          {
+            "key": "fit",
+            "label_bn": "ফিট",
+            "type": "select",
+            "choices": [
+              {
+                "value": "regular",
+                "label_bn": "রেগুলার"
+              },
+              {
+                "value": "slim",
+                "label_bn": "স্লিম"
+              },
+              {
+                "value": "loose",
+                "label_bn": "ঢিলা"
+              }
+            ]
+          }
+        ]
+      },
+      "basePrice": 1850,
+      "defaultDeliveryDays": 7,
+      "defaultFabricEstimate": 2.5,
+      "sortOrder": 1,
+      "stageRates": {
+        "cutting": 80,
+        "stitching": 220,
+        "finishing": 90
+      }
+    },
+    {
+      "code": "pant",
+      "nameBn": "প্যান্ট/ট্রাউজার",
+      "nameEn": "Pant",
+      "category": "gents",
+      "measurementSchema": {
+        "version": 1,
+        "unit": "cm",
+        "groups": [
+          {
+            "key": "lower_body",
+            "label_bn": "নিচের অংশ",
+            "label_en": "Lower body",
+            "fields": [
+              {
+                "key": "length",
+                "label_bn": "লম্বা",
+                "label_en": "Length",
+                "type": "measurement",
+                "required": true,
+                "min": 70,
+                "max": 130,
+                "help_bn": "কোমর থেকে মুহুরি পর্যন্ত",
+                "diagram_hint": "length",
+                "order": 1
+              },
+              {
+                "key": "waist",
+                "label_bn": "কোমর",
+                "label_en": "Waist",
+                "type": "measurement",
+                "required": true,
+                "min": 55,
+                "max": 160,
+                "help_bn": "",
+                "diagram_hint": "waist",
+                "order": 2
+              },
+              {
+                "key": "hip",
+                "label_bn": "হিপ/সীট",
+                "label_en": "Hip",
+                "type": "measurement",
+                "required": true,
+                "min": 65,
+                "max": 170,
+                "help_bn": "",
+                "diagram_hint": "hip",
+                "order": 3
+              },
+              {
+                "key": "thigh",
+                "label_bn": "থাই/উরু",
+                "label_en": "Thigh",
+                "type": "measurement",
+                "required": true,
+                "min": 35,
+                "max": 90,
+                "help_bn": "",
+                "diagram_hint": "thigh",
+                "order": 4
+              },
+              {
+                "key": "knee",
+                "label_bn": "হাঁটু",
+                "label_en": "Knee",
+                "type": "measurement",
+                "required": false,
+                "min": 25,
+                "max": 70,
+                "help_bn": "",
+                "diagram_hint": "knee",
+                "order": 5
+              },
+              {
+                "key": "bottom",
+                "label_bn": "মুহুরি (বটম)",
+                "label_en": "Bottom",
+                "type": "measurement",
+                "required": true,
+                "min": 25,
+                "max": 70,
+                "help_bn": "",
+                "diagram_hint": "bottom",
+                "order": 6
+              },
+              {
+                "key": "crotch",
+                "label_bn": "ক্রচ/রাইজ",
+                "label_en": "Crotch",
+                "type": "measurement",
+                "required": true,
+                "min": 20,
+                "max": 45,
+                "help_bn": "",
+                "diagram_hint": "crotch",
+                "order": 7
+              }
+            ]
+          }
+        ],
+        "validation_rules": []
+      },
+      "styleSchema": {
+        "options": [
+          {
+            "key": "fit",
+            "label_bn": "ফিট",
+            "type": "select",
+            "choices": [
+              {
+                "value": "regular",
+                "label_bn": "রেগুলার"
+              },
+              {
+                "value": "slim",
+                "label_bn": "স্লিম"
+              },
+              {
+                "value": "straight",
+                "label_bn": "সোজা"
+              }
+            ]
+          },
+          {
+            "key": "pleat",
+            "label_bn": "প্লিট",
+            "type": "select",
+            "choices": [
+              {
+                "value": "none",
+                "label_bn": "নেই"
+              },
+              {
+                "value": "single",
+                "label_bn": "এক"
+              },
+              {
+                "value": "double",
+                "label_bn": "দুই"
+              }
+            ]
+          },
+          {
+            "key": "pocket",
+            "label_bn": "পকেট",
+            "type": "select",
+            "choices": [
+              {
+                "value": "side",
+                "label_bn": "সাইড"
+              },
+              {
+                "value": "side_back",
+                "label_bn": "সাইড + পেছনে"
+              }
+            ]
+          },
+          {
+            "key": "bottom_fold",
+            "label_bn": "বটম ফোল্ড",
+            "type": "select",
+            "choices": [
+              {
+                "value": "plain",
+                "label_bn": "সাধারণ"
+              },
+              {
+                "value": "cuff",
+                "label_bn": "কাফ"
+              }
+            ]
+          },
+          {
+            "key": "waist_type",
+            "label_bn": "কোমর",
+            "type": "select",
+            "choices": [
+              {
+                "value": "belt",
+                "label_bn": "বেল্ট"
+              },
+              {
+                "value": "elastic",
+                "label_bn": "এলাস্টিক"
+              }
+            ]
+          }
+        ]
+      },
+      "basePrice": 1250,
+      "defaultDeliveryDays": 6,
+      "defaultFabricEstimate": 1.75,
+      "sortOrder": 2,
+      "stageRates": {
+        "cutting": 60,
+        "stitching": 160,
+        "finishing": 70
+      }
+    },
+    {
+      "code": "pajama",
+      "nameBn": "পায়জামা",
+      "nameEn": "Pajama",
+      "category": "gents",
+      "measurementSchema": {
+        "version": 1,
+        "unit": "cm",
+        "groups": [
+          {
+            "key": "lower_body",
+            "label_bn": "নিচের অংশ",
+            "label_en": "Lower body",
+            "fields": [
+              {
+                "key": "length",
+                "label_bn": "লম্বা",
+                "label_en": "Length",
+                "type": "measurement",
+                "required": true,
+                "min": 70,
+                "max": 130,
+                "help_bn": "",
+                "diagram_hint": "length",
+                "order": 1
+              },
+              {
+                "key": "waist",
+                "label_bn": "কোমর",
+                "label_en": "Waist",
+                "type": "measurement",
+                "required": true,
+                "min": 55,
+                "max": 160,
+                "help_bn": "",
+                "diagram_hint": "waist",
+                "order": 2
+              },
+              {
+                "key": "hip",
+                "label_bn": "হিপ",
+                "label_en": "Hip",
+                "type": "measurement",
+                "required": true,
+                "min": 65,
+                "max": 170,
+                "help_bn": "",
+                "diagram_hint": "hip",
+                "order": 3
+              },
+              {
+                "key": "thigh",
+                "label_bn": "উরু",
+                "label_en": "Thigh",
+                "type": "measurement",
+                "required": true,
+                "min": 35,
+                "max": 90,
+                "help_bn": "",
+                "diagram_hint": "thigh",
+                "order": 4
+              },
+              {
+                "key": "bottom",
+                "label_bn": "মুহুরি",
+                "label_en": "Bottom",
+                "type": "measurement",
+                "required": true,
+                "min": 25,
+                "max": 70,
+                "help_bn": "",
+                "diagram_hint": "bottom",
+                "order": 5
+              }
+            ]
+          }
+        ],
+        "validation_rules": []
+      },
+      "styleSchema": {
+        "options": [
+          {
+            "key": "fit",
+            "label_bn": "ফিট",
+            "type": "select",
+            "choices": [
+              {
+                "value": "regular",
+                "label_bn": "রেগুলার"
+              },
+              {
+                "value": "slim",
+                "label_bn": "স্লিম"
+              },
+              {
+                "value": "straight",
+                "label_bn": "সোজা"
+              }
+            ]
+          },
+          {
+            "key": "pleat",
+            "label_bn": "প্লিট",
+            "type": "select",
+            "choices": [
+              {
+                "value": "none",
+                "label_bn": "নেই"
+              },
+              {
+                "value": "single",
+                "label_bn": "এক"
+              },
+              {
+                "value": "double",
+                "label_bn": "দুই"
+              }
+            ]
+          },
+          {
+            "key": "pocket",
+            "label_bn": "পকেট",
+            "type": "select",
+            "choices": [
+              {
+                "value": "side",
+                "label_bn": "সাইড"
+              },
+              {
+                "value": "side_back",
+                "label_bn": "সাইড + পেছনে"
+              }
+            ]
+          },
+          {
+            "key": "bottom_fold",
+            "label_bn": "বটম ফোল্ড",
+            "type": "select",
+            "choices": [
+              {
+                "value": "plain",
+                "label_bn": "সাধারণ"
+              },
+              {
+                "value": "cuff",
+                "label_bn": "কাফ"
+              }
+            ]
+          },
+          {
+            "key": "waist_type",
+            "label_bn": "কোমর",
+            "type": "select",
+            "choices": [
+              {
+                "value": "belt",
+                "label_bn": "বেল্ট"
+              },
+              {
+                "value": "elastic",
+                "label_bn": "এলাস্টিক"
+              }
+            ]
+          }
+        ]
+      },
+      "basePrice": 900,
+      "defaultDeliveryDays": 5,
+      "defaultFabricEstimate": 1.5,
+      "sortOrder": 3,
+      "stageRates": {
+        "cutting": 60,
+        "stitching": 160,
+        "finishing": 70
+      }
+    },
+    {
+      "code": "kameez",
+      "nameBn": "কামিজ/সালোয়ার",
+      "nameEn": "Kameez",
+      "category": "ladies",
+      "measurementSchema": {
+        "version": 1,
+        "unit": "cm",
+        "groups": [
+          {
+            "key": "upper_body",
+            "label_bn": "উপরের অংশ",
+            "label_en": "Upper body",
+            "fields": [
+              {
+                "key": "length",
+                "label_bn": "লম্বা",
+                "label_en": "Length",
+                "type": "measurement",
+                "required": true,
+                "min": 70,
+                "max": 150,
+                "help_bn": "",
+                "diagram_hint": "length",
+                "order": 1
+              },
+              {
+                "key": "bust",
+                "label_bn": "বুক/বাস্ট",
+                "label_en": "Bust",
+                "type": "measurement",
+                "required": true,
+                "min": 60,
+                "max": 160,
+                "help_bn": "",
+                "diagram_hint": "chest",
+                "order": 2
+              },
+              {
+                "key": "underbust",
+                "label_bn": "আন্ডারবাস্ট",
+                "label_en": "Underbust",
+                "type": "measurement",
+                "required": true,
+                "min": 55,
+                "max": 150,
+                "help_bn": "",
+                "diagram_hint": "chest",
+                "order": 3
+              },
+              {
+                "key": "waist",
+                "label_bn": "কোমর",
+                "label_en": "Waist",
+                "type": "measurement",
+                "required": true,
+                "min": 50,
+                "max": 150,
+                "help_bn": "",
+                "diagram_hint": "waist",
+                "order": 4
+              },
+              {
+                "key": "hip",
+                "label_bn": "হিপ",
+                "label_en": "Hip",
+                "type": "measurement",
+                "required": true,
+                "min": 60,
+                "max": 170,
+                "help_bn": "",
+                "diagram_hint": "hip",
+                "order": 5
+              },
+              {
+                "key": "shoulder",
+                "label_bn": "কাঁধ",
+                "label_en": "Shoulder",
+                "type": "measurement",
+                "required": true,
+                "min": 30,
+                "max": 55,
+                "help_bn": "",
+                "diagram_hint": "shoulder",
+                "order": 6
+              },
+              {
+                "key": "sleeve",
+                "label_bn": "হাতা",
+                "label_en": "Sleeve",
+                "type": "measurement",
+                "required": true,
+                "min": 35,
+                "max": 70,
+                "help_bn": "",
+                "diagram_hint": "sleeve",
+                "order": 7
+              },
+              {
+                "key": "sleeve_round",
+                "label_bn": "হাতার ঘের",
+                "label_en": "Sleeve round",
+                "type": "measurement",
+                "required": true,
+                "min": 18,
+                "max": 45,
+                "help_bn": "",
+                "diagram_hint": "cuff",
+                "order": 8
+              },
+              {
+                "key": "front_neck_depth",
+                "label_bn": "সামনের গলা",
+                "label_en": "Front neck",
+                "type": "measurement",
+                "required": false,
+                "min": 3,
+                "max": 35,
+                "help_bn": "",
+                "diagram_hint": "neck",
+                "order": 9
+              },
+              {
+                "key": "back_neck_depth",
+                "label_bn": "পেছনের গলা",
+                "label_en": "Back neck",
+                "type": "measurement",
+                "required": false,
+                "min": 2,
+                "max": 30,
+                "help_bn": "",
+                "diagram_hint": "neck",
+                "order": 10
+              },
+              {
+                "key": "armhole",
+                "label_bn": "আর্মহোল",
+                "label_en": "Armhole",
+                "type": "measurement",
+                "required": true,
+                "min": 30,
+                "max": 60,
+                "help_bn": "",
+                "diagram_hint": "armhole",
+                "order": 11
+              },
+              {
+                "key": "slit_height",
+                "label_bn": "স্লিট উচ্চতা",
+                "label_en": "Slit height",
+                "type": "measurement",
+                "required": false,
+                "min": 5,
+                "max": 60,
+                "help_bn": "",
+                "diagram_hint": "hem",
+                "order": 12
+              }
+            ]
+          }
+        ],
+        "validation_rules": [
+          {
+            "type": "ratio",
+            "fields": [
+              "bust",
+              "waist"
+            ],
+            "min": 0.7,
+            "max": 1.5,
+            "severity": "warning",
+            "message_bn": "বাস্ট ও কোমরের অনুপাত অস্বাভাবিক, আবার মেপে দেখুন"
+          }
+        ]
+      },
+      "styleSchema": {
+        "options": [
+          {
+            "key": "neck_design",
+            "label_bn": "গলা ডিজাইন",
+            "type": "select",
+            "choices": [
+              {
+                "value": "round",
+                "label_bn": "গোল"
+              },
+              {
+                "value": "v",
+                "label_bn": "ভি"
+              },
+              {
+                "value": "sweetheart",
+                "label_bn": "সোয়িটহার্ট"
+              },
+              {
+                "value": "boat",
+                "label_bn": "বোট"
+              }
+            ]
+          },
+          {
+            "key": "sleeve_design",
+            "label_bn": "হাতা ডিজাইন",
+            "type": "select",
+            "choices": [
+              {
+                "value": "straight",
+                "label_bn": "সোজা"
+              },
+              {
+                "value": "bell",
+                "label_bn": "বেল"
+              },
+              {
+                "value": "elbow",
+                "label_bn": "এলবো"
+              }
+            ]
+          },
+          {
+            "key": "slit",
+            "label_bn": "স্লিট",
+            "type": "select",
+            "choices": [
+              {
+                "value": "both",
+                "label_bn": "দুই পাশে"
+              },
+              {
+                "value": "one",
+                "label_bn": "এক পাশে"
+              },
+              {
+                "value": "none",
+                "label_bn": "নেই"
+              }
+            ]
+          },
+          {
+            "key": "lining",
+            "label_bn": "লাইনিং",
+            "type": "select",
+            "choices": [
+              {
+                "value": "none",
+                "label_bn": "নেই"
+              },
+              {
+                "value": "full",
+                "label_bn": "ফুল"
+              },
+              {
+                "value": "top",
+                "label_bn": "শুধু ওপরে"
+              }
+            ]
+          }
+        ]
+      },
+      "basePrice": 2200,
+      "defaultDeliveryDays": 8,
+      "defaultFabricEstimate": 3.25,
+      "sortOrder": 4,
+      "stageRates": {
+        "cutting": 90,
+        "stitching": 320,
+        "finishing": 110
+      }
+    },
+    {
+      "code": "blouse",
+      "nameBn": "ব্লাউজ",
+      "nameEn": "Blouse",
+      "category": "ladies",
+      "measurementSchema": {
+        "version": 1,
+        "unit": "cm",
+        "groups": [
+          {
+            "key": "upper_body",
+            "label_bn": "উপরের অংশ",
+            "label_en": "Upper body",
+            "fields": [
+              {
+                "key": "length",
+                "label_bn": "লম্বা",
+                "label_en": "Length",
+                "type": "measurement",
+                "required": true,
+                "min": 30,
+                "max": 70,
+                "help_bn": "",
+                "diagram_hint": "length",
+                "order": 1
+              },
+              {
+                "key": "bust",
+                "label_bn": "বুক",
+                "label_en": "Bust",
+                "type": "measurement",
+                "required": true,
+                "min": 55,
+                "max": 150,
+                "help_bn": "",
+                "diagram_hint": "chest",
+                "order": 2
+              },
+              {
+                "key": "underbust",
+                "label_bn": "আন্ডারবাস্ট",
+                "label_en": "Underbust",
+                "type": "measurement",
+                "required": true,
+                "min": 50,
+                "max": 145,
+                "help_bn": "",
+                "diagram_hint": "chest",
+                "order": 3
+              },
+              {
+                "key": "waist",
+                "label_bn": "কোমর",
+                "label_en": "Waist",
+                "type": "measurement",
+                "required": true,
+                "min": 45,
+                "max": 145,
+                "help_bn": "",
+                "diagram_hint": "waist",
+                "order": 4
+              },
+              {
+                "key": "shoulder",
+                "label_bn": "কাঁধ",
+                "label_en": "Shoulder",
+                "type": "measurement",
+                "required": true,
+                "min": 28,
+                "max": 50,
+                "help_bn": "",
+                "diagram_hint": "shoulder",
+                "order": 5
+              },
+              {
+                "key": "sleeve",
+                "label_bn": "হাতা",
+                "label_en": "Sleeve",
+                "type": "measurement",
+                "required": true,
+                "min": 20,
+                "max": 60,
+                "help_bn": "",
+                "diagram_hint": "sleeve",
+                "order": 6
+              },
+              {
+                "key": "sleeve_round",
+                "label_bn": "হাতার ঘের",
+                "label_en": "Sleeve round",
+                "type": "measurement",
+                "required": true,
+                "min": 18,
+                "max": 45,
+                "help_bn": "",
+                "diagram_hint": "cuff",
+                "order": 7
+              },
+              {
+                "key": "front_neck_depth",
+                "label_bn": "সামনের গলা",
+                "label_en": "Front neck",
+                "type": "measurement",
+                "required": true,
+                "min": 3,
+                "max": 35,
+                "help_bn": "",
+                "diagram_hint": "neck",
+                "order": 8
+              },
+              {
+                "key": "back_neck_depth",
+                "label_bn": "পেছনের গলা",
+                "label_en": "Back neck",
+                "type": "measurement",
+                "required": true,
+                "min": 2,
+                "max": 40,
+                "help_bn": "",
+                "diagram_hint": "neck",
+                "order": 9
+              },
+              {
+                "key": "dart_point",
+                "label_bn": "ডার্ট পয়েন্ট",
+                "label_en": "Dart point",
+                "type": "measurement",
+                "required": false,
+                "min": 5,
+                "max": 35,
+                "help_bn": "",
+                "diagram_hint": "chest",
+                "order": 10
+              }
+            ]
+          }
+        ],
+        "validation_rules": []
+      },
+      "styleSchema": {
+        "options": [
+          {
+            "key": "neck_design",
+            "label_bn": "গলা ডিজাইন",
+            "type": "select",
+            "choices": [
+              {
+                "value": "round",
+                "label_bn": "গোল"
+              },
+              {
+                "value": "v",
+                "label_bn": "ভি"
+              },
+              {
+                "value": "sweetheart",
+                "label_bn": "সোয়িটহার্ট"
+              },
+              {
+                "value": "boat",
+                "label_bn": "বোট"
+              }
+            ]
+          },
+          {
+            "key": "sleeve_design",
+            "label_bn": "হাতা ডিজাইন",
+            "type": "select",
+            "choices": [
+              {
+                "value": "straight",
+                "label_bn": "সোজা"
+              },
+              {
+                "value": "bell",
+                "label_bn": "বেল"
+              },
+              {
+                "value": "elbow",
+                "label_bn": "এলবো"
+              }
+            ]
+          },
+          {
+            "key": "slit",
+            "label_bn": "স্লিট",
+            "type": "select",
+            "choices": [
+              {
+                "value": "both",
+                "label_bn": "দুই পাশে"
+              },
+              {
+                "value": "one",
+                "label_bn": "এক পাশে"
+              },
+              {
+                "value": "none",
+                "label_bn": "নেই"
+              }
+            ]
+          },
+          {
+            "key": "lining",
+            "label_bn": "লাইনিং",
+            "type": "select",
+            "choices": [
+              {
+                "value": "none",
+                "label_bn": "নেই"
+              },
+              {
+                "value": "full",
+                "label_bn": "ফুল"
+              },
+              {
+                "value": "top",
+                "label_bn": "শুধু ওপরে"
+              }
+            ]
+          }
+        ]
+      },
+      "basePrice": 850,
+      "defaultDeliveryDays": 5,
+      "defaultFabricEstimate": 1.25,
+      "sortOrder": 5,
+      "stageRates": {
+        "cutting": 60,
+        "stitching": 160,
+        "finishing": 70
+      }
+    }
+  ]
+}

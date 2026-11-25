@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { SearchCheck } from "lucide-react";
+import { toast } from "sonner";
+import { useMutationError } from "@/components/feedback/FeedbackProvider";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,7 +26,7 @@ export function TrackForm({ compact = false }: { compact?: boolean }) {
   const [phone, setPhone] = useState("");
   const [orderNo, setOrderNo] = useState("");
   const [result, setResult] = useState<TrackResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useMutationError();
   const [busy, setBusy] = useState(false);
 
   async function runTrack(p: string, o: string) {
@@ -39,7 +41,7 @@ export function TrackForm({ compact = false }: { compact?: boolean }) {
       });
       const data = await res.json();
       if (!res.ok) setError(data?.error?.message ?? "ট্র্যাক করা যায়নি");
-      else setResult(data as TrackResult);
+      else { setResult(data as TrackResult); toast.success("অর্ডারের তথ্য পাওয়া গেছে।"); }
     } catch {
       setError("নেটওয়ার্ক সমস্যা — আবার চেষ্টা করুন");
     } finally {
@@ -50,14 +52,6 @@ export function TrackForm({ compact = false }: { compact?: boolean }) {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     await runTrack(phone, orderNo);
-  }
-
-  function fillDemo() {
-    const demoPhone = "01712345678";
-    const demoOrder = "TP-2611-0043";
-    setPhone(demoPhone);
-    setOrderNo(demoOrder);
-    void runTrack(demoPhone, demoOrder);
   }
 
   return (
@@ -80,7 +74,7 @@ export function TrackForm({ compact = false }: { compact?: boolean }) {
             id="tr-order"
             value={orderNo}
             onChange={(e) => setOrderNo(e.target.value.toUpperCase())}
-            placeholder="TP-2611-0043"
+            placeholder="অর্ডারের নম্বর লিখুন"
             className="num uppercase"
           />
         </div>
@@ -89,17 +83,6 @@ export function TrackForm({ compact = false }: { compact?: boolean }) {
           {busy ? "খোঁজা হচ্ছে…" : "ট্র্যাক করুন"}
         </Button>
       </form>
-
-      <div className="mt-3 flex flex-wrap items-center gap-2 text-[13px] text-stone">
-        <span>নমুনা দেখতে চান?</span>
-        <button
-          type="button"
-          onClick={fillDemo}
-          className="num font-medium text-gold-dark underline underline-offset-4 hover:text-ink"
-        >
-          ডেমো অর্ডার (TP-2611-0043) ট্র্যাক করে দেখুন
-        </button>
-      </div>
 
       {error && (
         <div className="mt-4">

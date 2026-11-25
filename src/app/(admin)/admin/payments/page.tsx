@@ -1,3 +1,4 @@
+import { viewFields } from "@/server/repositories/views";
 import { requireAdminPage } from "@/lib/page-auth";
 import Link from "next/link";
 import { asc, desc, eq, gte, sql } from "drizzle-orm";
@@ -37,13 +38,13 @@ export default async function PaymentsPage() {
 
   const [dueRows, payRows, expRows, todayIncome, monthIncome] = await Promise.all([
     db
-      .select({ o: orders, c: customers })
+      .select({ o: viewFields(orders), c: viewFields(customers) })
       .from(orders)
       .innerJoin(customers, eq(orders.customerId, customers.id))
       .where(sql`${orders.status} not in ('delivered','cancelled') AND ${orders.dueAmount} > 0`)
       .orderBy(orders.deliveryDate),
     db
-      .select({ p: payments, customer: customers.name, orderNo: orders.orderNo })
+      .select({ p: viewFields(payments), customer: customers.name, orderNo: orders.orderNo })
       .from(payments)
       .leftJoin(orders, eq(payments.orderId, orders.id))
       .innerJoin(customers, eq(payments.customerId, customers.id))

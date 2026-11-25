@@ -1,3 +1,4 @@
+import { viewFields } from "@/server/repositories/views";
 import { requireAdminPage } from "@/lib/page-auth";
 import Link from "next/link";
 import { asc, eq, sql } from "drizzle-orm";
@@ -14,7 +15,7 @@ export const dynamic = "force-dynamic";
 export default async function OverduePage() {
   await requireAdminPage();
   const rows = await db
-    .select({ o: orders, c: customers })
+    .select({ o: viewFields(orders), c: viewFields(customers) })
     .from(orders)
     .innerJoin(customers, eq(orders.customerId, customers.id))
     .where(sql`${orders.status} not in ('delivered','cancelled')`)
@@ -22,7 +23,7 @@ export default async function OverduePage() {
     .limit(300);
 
   const items = await db
-    .select({ oi: orderItems, g: garmentTypes })
+    .select({ oi: orderItems, g: viewFields(garmentTypes) })
     .from(orderItems)
     .innerJoin(garmentTypes, eq(orderItems.garmentTypeId, garmentTypes.id));
   const byOrder = new Map<string, string[]>();
