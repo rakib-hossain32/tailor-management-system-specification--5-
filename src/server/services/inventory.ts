@@ -6,7 +6,7 @@ import { ApiError } from "@/lib/api-route";
 import { text } from "@/lib/api-input";
 import { recordAudit } from "@/server/audit";
 import type { Transaction } from "@/server/repositories/people";
-import { amount, authorize, bool, changedFields, choice, page, present, quantity, required, uuid, type Actor, type Input, type ListOptions } from "./ops-common";
+import { amount, authorize, bool, changedFields, choice, page, present, quantity, required, searchTerms, activeTerm, uuid, type Actor, type Input, type ListOptions } from "./ops-common";
 
 function fields(input: Input, current?: typeof fabricRecords.$inferSelect) {
   const code = required(input.code ?? current?.code, "কাপড়ের কোড", 50).toLowerCase();
@@ -17,7 +17,8 @@ function fields(input: Input, current?: typeof fabricRecords.$inferSelect) {
 }
 export async function listFabrics(actor: Actor, options?: ListOptions) {
   authorize(actor, "admin");
-  const p = page(options), filter = p.q ? or(ilike(fabrics.name, "%" + p.q + "%"), ilike(fabrics.code, "%" + p.q + "%")) : undefined;
+  const p = page(options), t = searchTerms(p.q), active = activeTerm(p.q);
+  const filter = p.q ? or(ilike(fabrics.name, "%" + t.raw + "%"), ilike(fabrics.code, "%" + t.normalized + "%"), ilike(fabrics.type, "%" + t.raw + "%"), ilike(fabrics.color, "%" + t.raw + "%"), ilike(fabrics.supplier, "%" + t.raw + "%"), t.digits ? sql`${fabrics.sellPrice}::text ilike ${"%" + t.digits + "%"}` : undefined, t.digits ? sql`${fabrics.costPrice}::text ilike ${"%" + t.digits + "%"}` : undefined, active !== undefined ? eq(fabrics.isActive, active) : undefined) : undefined;
   const [rows, count] = await Promise.all([db.select().from(fabrics).where(filter).orderBy(asc(fabrics.name)).limit(p.limit).offset(p.offset), db.select({ n: sql<number>`count(*)::int` }).from(fabrics).where(filter)]);
   return { rows, total: count[0].n, page: p.page, limit: p.limit };
 }

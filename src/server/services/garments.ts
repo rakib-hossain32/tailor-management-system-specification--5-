@@ -7,7 +7,7 @@ import { numberValue } from "@/lib/api-input";
 import { recordAudit } from "@/server/audit";
 import type { Transaction } from "@/server/repositories/people";
 import type { MeasurementSchema, StyleSchema } from "@/lib/measurements";
-import { amount, authorize, bool, changedFields, choice, page, present, quantity, required, uuid, type Actor, type Input, type ListOptions, STAGES } from "./ops-common";
+import { amount, authorize, bool, changedFields, choice, page, present, quantity, required, searchTerms, activeTerm, uuid, type Actor, type Input, type ListOptions, STAGES } from "./ops-common";
 
 function schema(value: unknown): MeasurementSchema {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new ApiError(422, "INVALID_SCHEMA", "মাপের ফিল্ড দিন");
@@ -67,7 +67,8 @@ async function setRates(tx: Transaction, actor: Actor, id: string, value: unknow
 }
 export async function listGarments(actor: Actor, options?: ListOptions) {
   authorize(actor, "admin");
-  const p = page(options), filter = p.q ? or(ilike(garmentTypes.nameBn, "%" + p.q + "%"), ilike(garmentTypes.code, "%" + p.q + "%")) : undefined;
+  const p = page(options), t = searchTerms(p.q), active = activeTerm(p.q);
+  const filter = p.q ? or(ilike(garmentTypes.nameBn, "%" + t.raw + "%"), ilike(garmentTypes.nameEn, "%" + t.raw + "%"), ilike(garmentTypes.code, "%" + t.normalized + "%"), t.digits ? sql`${garmentTypes.basePrice}::text ilike ${"%" + t.digits + "%"}` : undefined, active !== undefined ? eq(garmentTypes.isActive, active) : undefined) : undefined;
   const [rows, count] = await Promise.all([db.select().from(garmentTypes).where(filter).orderBy(asc(garmentTypes.sortOrder), asc(garmentTypes.nameBn)).limit(p.limit).offset(p.offset), db.select({ n: sql<number>`count(*)::int` }).from(garmentTypes).where(filter)]);
   const rates = rows.length ? await db.select().from(garmentStageRates).where(inArray(garmentStageRates.garmentTypeId, rows.map((row) => row.id))).orderBy(desc(garmentStageRates.version)) : [];
   const enriched = rows.map((row) => ({ ...row, stageRates: Object.fromEntries(STAGES.map((stage) => [stage, rates.find((rate) => rate.garmentTypeId === row.id && rate.stage === stage)?.pieceRate ?? null])) }));

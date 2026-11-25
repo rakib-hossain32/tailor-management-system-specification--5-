@@ -10,13 +10,24 @@ import "react-day-picker/dist/style.css";
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
-function Calendar({ className, classNames, showOutsideDays = true, captionLayout = "label", locale, ...props }: CalendarProps) {
+function Calendar({
+  className,
+  classNames,
+  showOutsideDays = true,
+  captionLayout = "dropdown",
+  locale,
+  startMonth,
+  endMonth,
+  ...props
+}: CalendarProps) {
   const defaultClassNames = getDefaultClassNames();
 
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
       captionLayout={captionLayout}
+      startMonth={startMonth ?? new Date(1950, 0)}
+      endMonth={endMonth ?? new Date(new Date().getFullYear() + 10, 11)}
       locale={locale ?? bn}
       className={cn(
         "bg-paper p-3 text-ink [--rdp-cell-size:2.25rem] [--rdp-accent-color:#D9A21B] [--rdp-background-color:#F6E3B8]",
@@ -28,6 +39,11 @@ function Calendar({ className, classNames, showOutsideDays = true, captionLayout
         month: cn("flex flex-col gap-3", defaultClassNames.month),
         month_caption: cn("flex items-center justify-center gap-2 px-2 pb-1", defaultClassNames.month_caption),
         caption_label: cn("text-base font-medium", defaultClassNames.caption_label),
+        dropdowns: cn("flex items-center justify-center gap-1.5", defaultClassNames.dropdowns),
+        dropdown: cn(
+          "rounded-sm border border-ink/15 bg-paper px-1.5 py-1 text-sm font-medium text-ink outline-none focus-visible:ring-2 focus-visible:ring-gold/50",
+          defaultClassNames.dropdown,
+        ),
         nav: cn("flex items-center gap-1", defaultClassNames.nav),
         button_previous: cn(
           "absolute left-1 top-1 flex size-8 items-center justify-center rounded-sm border border-ink/15 bg-paper text-ink hover:bg-ink/8 outline-none focus-visible:ring-2 focus-visible:ring-gold/50",

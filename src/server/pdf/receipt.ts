@@ -191,8 +191,8 @@ export function drawField(
   y: number,
   width: number,
 ): number {
-  drawPrintText(doc, fonts, label, x, y, { width, size: 8, color: GRAY, lineBreak: false });
-  return drawPrintText(doc, fonts, value, x, y + 10.5, { width, size: 11.5, color: INK });
+  drawPrintText(doc, fonts, label, x, y, { width, size: 7.5, color: GRAY, lineBreak: false });
+  return drawPrintText(doc, fonts, value, x, y + 10, { width, size: 10.5, color: INK });
 }
 
 /** A horizontal hairline rule; returns the y of the line. */

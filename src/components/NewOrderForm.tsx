@@ -279,20 +279,33 @@ function NewOrderFields({
     catch (error) { setError(error instanceof Error ? error.message : "খসড়া সংরক্ষণ হয়নি।"); }
   }
 
-  // customer search
+  // customer search — with visible state: the admin must be able to
+  // SEE that a search ran (spinner) and that it found nothing (a
+  // message), instead of a silent empty box that looks broken.
+  const [searching, setSearching] = useState(false);
+  const [searched, setSearched] = useState(false);
   useEffect(() => {
     if (customer || query.trim().length < 2) return;
     const controller = new AbortController();
     let alive = true;
     const timer = setTimeout(async () => {
+      setSearching(true);
       try {
         const res = await fetch(`/api/v1/customers?q=${encodeURIComponent(query.trim())}`, {
           signal: controller.signal,
         });
         const data = await res.json();
-        if (alive) setHits(data.customers ?? []);
+        if (alive) {
+          setHits(data.customers ?? []);
+          setSearched(true);
+        }
       } catch {
-        if (alive) setHits([]);
+        if (alive) {
+          setHits([]);
+          setSearched(true);
+        }
+      } finally {
+        if (alive) setSearching(false);
       }
     }, 220);
     return () => {
@@ -481,6 +494,8 @@ function NewOrderFields({
                       onChange={(e) => {
                         setQuery(e.target.value);
                         setHits([]);
+                        setSearched(false);
+                        setSearching(false);
                       }}
                       placeholder="যেমন: ০১৭… বা রহিমউদ্দিন"
                       className="flex-1"
@@ -494,6 +509,14 @@ function NewOrderFields({
                       }}
                     />
                   </div>
+                  {searching && (
+                    <p className="mt-2 text-[13.5px] text-stone" role="status">খোঁজা হচ্ছে…</p>
+                  )}
+                  {!searching && searched && hits.length === 0 && query.trim().length >= 2 && (
+                    <p className="mt-2 rounded-md bg-paper-2 px-3 py-2 text-[13.5px] text-ink-3" role="status">
+                      “{query.trim()}” দিয়ে কোনো কাস্টমার পাওয়া যায়নি — নাম বা ফোন নম্বর আবার দেখুন, অথবা নিচে নতুন কাস্টমার তৈরি করুন।
+                    </p>
+                  )}
                   {hits.length > 0 && (
                     <ul className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-md border border-ink/15 bg-white shadow-xl">
                       {hits.map((h) => (

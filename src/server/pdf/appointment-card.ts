@@ -20,7 +20,7 @@ import {
 } from "./receipt";
 
 /**
- * Appointment slip PDF — PORTRAIT, 52 mm wide: the long side is about
+ * Appointment slip PDF — PORTRAIT, 68 mm wide: the long side is about
  * the length of an adult index finger (শাহাদাত আঙুল), standing upright
  * like one — never landscape.
  *
@@ -58,9 +58,10 @@ function timeLabel(d: Date): string {
   return `${period} ${toBnDigits(h12)}:${toBnDigits(String(m).padStart(2, "0"))}`;
 }
 
-// 52 mm wide in PostScript points; height starts at 80 mm (finger
-// length) and grows with the content — see renderDynamicPdf.
-const PAGE_W = 147.4;
+// 68 mm wide in PostScript points (the owner asked for a slightly
+// sturdier slip than the first 52 mm cut); height starts at 80 mm
+// (finger length) and grows with the content — see renderDynamicPdf.
+const PAGE_W = 192.8;
 const MIN_H = 226.8;
 
 export async function buildAppointmentCardPdf(
@@ -103,33 +104,33 @@ export async function buildAppointmentCardPdf(
     width: PAGE_W,
     minHeight: MIN_H,
     draw: (doc, fonts) => {
-      const M = 10; // side margin
-      const W = PAGE_W - M * 2; // content width ≈ 127.4pt
+      const M = 12; // side margin
+      const W = PAGE_W - M * 2; // content width ≈ 168.8pt
       let y = 9;
 
       // ── header: shop name centered, phone under it, strong rule ──
-      y = drawPrintText(doc, fonts, shopName, M, y, { width: W, size: 14, color: INK, align: "center" }) + 1;
+      y = drawPrintText(doc, fonts, shopName, M, y, { width: W, size: 13, color: INK, align: "center" }) + 1;
       if (shopPhone) {
-        drawPrintText(doc, fonts, shopPhone, M, y, { width: W, size: 9.5, color: DARK, align: "center", lineBreak: false });
-        y += 13;
+        drawPrintText(doc, fonts, shopPhone, M, y, { width: W, size: 9, color: DARK, align: "center", lineBreak: false });
+        y += 12;
       }
       y = drawRule(doc, M, y, W, 1.4, INK) + 3;
-      drawPrintText(doc, fonts, "অ্যাপয়েন্টমেন্ট স্লিপ", M, y, { width: W - 40, size: 8.5, color: GRAY, lineBreak: false });
-      drawPrintText(doc, fonts, status, M, y, { width: W, size: 8.5, color: GRAY, align: "right", lineBreak: false });
-      y += 12;
+      drawPrintText(doc, fonts, "অ্যাপয়েন্টমেন্ট স্লিপ", M, y, { width: W - 40, size: 8, color: GRAY, lineBreak: false });
+      drawPrintText(doc, fonts, status, M, y, { width: W, size: 8, color: GRAY, align: "right", lineBreak: false });
+      y += 11;
       y = drawRule(doc, M, y, W) + 6;
 
       // ── customer: label above a large name, phone under it ──
-      drawPrintText(doc, fonts, "কাস্টমার", M, y, { width: W, size: 8, color: GRAY, lineBreak: false });
-      y += 10.5;
-      y = drawPrintText(doc, fonts, a.name, M, y, { width: W, size: 13.5, color: INK }) + 1;
-      drawPrintText(doc, fonts, toBnDigits(formatPhone(a.phone)), M, y, { width: W, size: 11, color: DARK, lineBreak: false });
-      y += 15;
+      drawPrintText(doc, fonts, "কাস্টমার", M, y, { width: W, size: 7.5, color: GRAY, lineBreak: false });
+      y += 10;
+      y = drawPrintText(doc, fonts, a.name, M, y, { width: W, size: 12, color: INK }) + 1;
+      drawPrintText(doc, fonts, toBnDigits(formatPhone(a.phone)), M, y, { width: W, size: 10.5, color: DARK, lineBreak: false });
+      y += 14;
       y = drawRule(doc, M, y, W) + 6;
 
       // ── every submitted field, stacked label → value ──
       const field = (label: string, value: string) => {
-        y = drawField(doc, fonts, label, value, M, y, W) + 5;
+        y = drawField(doc, fonts, label, value, M, y, W) + 4;
       };
       field("তারিখ", toBnDigits(dateBn(start)));
       field("সময়", `${timeLabel(start)} – ${timeLabel(end)}`);
@@ -141,17 +142,17 @@ export async function buildAppointmentCardPdf(
 
       // ── barcode block at the foot of the content ──
       y = drawRule(doc, M, y + 1, W) + 5;
-      doc.image(barcode, M, y, { width: W, height: 17 });
-      y += 21.5;
+      doc.image(barcode, M, y, { width: W, height: 16 });
+      y += 20;
       drawPrintText(doc, fonts, toBnDigits(formatRecordCode(code)), M, y, {
         width: W,
-        size: 11,
+        size: 10.5,
         color: INK,
         align: "center",
         characterSpacing: 1.6,
         lineBreak: false,
       });
-      y += 15;
+      y += 14;
       drawPrintText(doc, fonts, "আসার সময় এই স্লিপটি সঙ্গে আনুন", M, y, {
         width: W,
         size: 7.5,

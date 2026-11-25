@@ -6,7 +6,7 @@ import { hashPassword } from "@/lib/auth";
 import { ApiError } from "@/lib/api-route";
 import { recordAudit } from "@/server/audit";
 import { resolvePerson } from "@/server/repositories/people";
-import { authorize, bool, changedFields, choice, page, personFields, present, searchTerms, uuid, type Actor, type Input, type ListOptions } from "./ops-common";
+import { authorize, bool, changedFields, choice, page, personFields, present, searchTerms, activeTerm, labelTerm, uuid, type Actor, type Input, type ListOptions } from "./ops-common";
 
 const ROLES = ["owner", "manager", "reception", "master", "worker"];
 const safeFields = { id: users.id, personId: users.personId, name: users.name, phone: users.phone, email: users.email, role: users.role, isActive: users.isActive, lastLoginAt: users.lastLoginAt, createdAt: users.createdAt, updatedAt: users.updatedAt };
@@ -21,7 +21,8 @@ function passwordHash(value: unknown, required = false) {
 export async function listUsers(actor: Actor, options?: ListOptions) {
   authorize(actor, "owner");
   const p = page(options);
-  const t = searchTerms(p.q); const filter = p.q ? or(ilike(users.name, "%" + t.raw + "%"), ilike(users.phone, "%" + t.normalized + "%"), t.digits ? ilike(users.phone, "%" + t.digits + "%") : undefined, ilike(users.email, "%" + t.raw + "%")) : undefined;
+  const t = searchTerms(p.q), active = activeTerm(p.q), role = labelTerm(p.q, { "মালিক": "owner", "ম্যানেজার": "manager", "রিসেপশন": "reception", "মাস্টার": "master", "কারিগর": "worker" });
+  const filter = p.q ? or(ilike(users.name, "%" + t.raw + "%"), ilike(users.phone, "%" + t.normalized + "%"), t.digits ? ilike(users.phone, "%" + t.digits + "%") : undefined, ilike(users.email, "%" + t.raw + "%"), role ? eq(users.role, role) : undefined, active !== undefined ? eq(users.isActive, active) : undefined) : undefined;
   const [rows, count] = await Promise.all([db.select(safeFields).from(users).where(filter).orderBy(asc(users.name)).limit(p.limit).offset(p.offset), db.select({ n: sql<number>`count(*)::int` }).from(users).where(filter)]);
   return { rows, total: count[0].n, page: p.page, limit: p.limit };
 }
