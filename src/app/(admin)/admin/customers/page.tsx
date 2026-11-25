@@ -4,7 +4,10 @@ import Link from "next/link";
 import { desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { customers, orders } from "@/db/schema";
+import { normalizeDigits } from "@/lib/units";
 import { DueBadge } from "@/components/StatusBadge";
+import { LiveSearchInput } from "@/components/admin/LiveFilters";
+import { ClickableRow } from "@/components/admin/ClickableRow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -40,7 +43,7 @@ export default async function CustomersPage({
       q
         ? or(
             ilike(customers.name, `%${q}%`),
-            ilike(customers.phone, `%${q}%`),
+            ilike(customers.phone, `%${normalizeDigits(q)}%`),
             ilike(customers.address, `%${q}%`),
           )
         : undefined,
@@ -71,16 +74,15 @@ export default async function CustomersPage({
 
       <Card>
         <CardContent className="pt-5">
-          <form className="flex flex-wrap items-end gap-3" method="get">
+          <div className="flex flex-wrap items-end gap-3">
             <div className="min-w-[240px] flex-1 space-y-1.5">
               <Label htmlFor="cu-q">খোঁজ</Label>
-              <Input id="cu-q" name="q" defaultValue={q} placeholder="নাম, ফোন বা ঠিকানা…" />
+              <LiveSearchInput id="cu-q" value={q} params={{}} placeholder="নাম, ফোন বা ঠিকানা…" />
             </div>
-            <Button type="submit">খুঁজুন</Button>
             <Button asChild type="button" variant="outline">
               <Link href="/admin/customers">রিসেট</Link>
             </Button>
-          </form>
+          </div>
         </CardContent>
       </Card>
 
@@ -108,7 +110,7 @@ export default async function CustomersPage({
               {rows.map(({ c, orderCount }) => {
                 const due = dueByCustomer.get(c.id) ?? 0;
                 return (
-                  <TableRow key={c.id}>
+                  <ClickableRow key={c.id} href={`/admin/customers/${c.id}`}>
                     <TableCell>
                       <Link href={`/admin/customers/${c.id}`} className="chalk-link font-medium">
                         {c.name}
@@ -134,7 +136,7 @@ export default async function CustomersPage({
                     <TableCell className="text-right">
                       {due > 0 ? <DueBadge due={due} /> : <span className="text-stone">—</span>}
                     </TableCell>
-                  </TableRow>
+                  </ClickableRow>
                 );
               })}
             </TableBody>

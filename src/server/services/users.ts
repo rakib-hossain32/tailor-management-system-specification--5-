@@ -6,7 +6,7 @@ import { hashPassword } from "@/lib/auth";
 import { ApiError } from "@/lib/api-route";
 import { recordAudit } from "@/server/audit";
 import { resolvePerson } from "@/server/repositories/people";
-import { authorize, bool, changedFields, choice, page, personFields, present, uuid, type Actor, type Input, type ListOptions } from "./ops-common";
+import { authorize, bool, changedFields, choice, page, personFields, present, searchTerms, uuid, type Actor, type Input, type ListOptions } from "./ops-common";
 
 const ROLES = ["owner", "manager", "reception", "master", "worker"];
 const safeFields = { id: users.id, personId: users.personId, name: users.name, phone: users.phone, email: users.email, role: users.role, isActive: users.isActive, lastLoginAt: users.lastLoginAt, createdAt: users.createdAt, updatedAt: users.updatedAt };
@@ -21,7 +21,7 @@ function passwordHash(value: unknown, required = false) {
 export async function listUsers(actor: Actor, options?: ListOptions) {
   authorize(actor, "owner");
   const p = page(options);
-  const filter = p.q ? or(ilike(users.name, "%" + p.q + "%"), ilike(users.phone, "%" + p.q + "%"), ilike(users.email, "%" + p.q + "%")) : undefined;
+  const t = searchTerms(p.q); const filter = p.q ? or(ilike(users.name, "%" + t.raw + "%"), ilike(users.phone, "%" + t.normalized + "%"), t.digits ? ilike(users.phone, "%" + t.digits + "%") : undefined, ilike(users.email, "%" + t.raw + "%")) : undefined;
   const [rows, count] = await Promise.all([db.select(safeFields).from(users).where(filter).orderBy(asc(users.name)).limit(p.limit).offset(p.offset), db.select({ n: sql<number>`count(*)::int` }).from(users).where(filter)]);
   return { rows, total: count[0].n, page: p.page, limit: p.limit };
 }

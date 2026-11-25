@@ -212,10 +212,10 @@ export default async function CustomerDetailPage({
                           <span className="num text-stone">v{s.version}</span> ·{" "}
                           <span className="num">{dateShort(s.measuredAt)}</span>
                           <Link
-                            href={`/admin/measurements/${s.id}/card`}
+                            href={`/api/v1/admin/measurements/${s.id}/card`}
                             className="chalk-link text-gold-dark"
                           >
-                            কার্ড →
+                            কার্ড PDF →
                           </Link>
                         </span>
                       ))}

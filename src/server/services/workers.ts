@@ -7,12 +7,12 @@ import { hashPassword } from "@/lib/auth";
 import { ApiError } from "@/lib/api-route";
 import { recordAudit } from "@/server/audit";
 import { resolvePerson } from "@/server/repositories/people";
-import { amount, authorize, bool, changedFields, choice, date, page, personFields, present, strings, uuid, type Actor, type Input, type ListOptions, STAGES } from "./ops-common";
+import { amount, authorize, bool, changedFields, choice, date, page, personFields, present, searchTerms, strings, uuid, type Actor, type Input, type ListOptions, STAGES } from "./ops-common";
 
 export async function listWorkers(actor: Actor, options?: ListOptions) {
   authorize(actor, "management");
   const p = page(options);
-  const filter = p.q ? or(ilike(workers.name, "%" + p.q + "%"), ilike(workers.phone, "%" + p.q + "%")) : undefined;
+  const t = searchTerms(p.q); const filter = p.q ? or(ilike(workers.name, "%" + t.raw + "%"), ilike(workers.phone, "%" + t.normalized + "%"), t.digits ? ilike(workers.phone, "%" + t.digits + "%") : undefined) : undefined;
   const [rows, count] = await Promise.all([db.select({ worker: viewFields(workers), email: people.email }).from(workers).innerJoin(people, eq(workers.personId, people.id)).where(filter).orderBy(asc(workers.name)).limit(p.limit).offset(p.offset), db.select({ n: sql<number>`count(*)::int` }).from(workers).where(filter)]);
   return { rows: rows.map((row) => ({ ...row.worker, email: row.email })), total: count[0].n, page: p.page, limit: p.limit };
 }

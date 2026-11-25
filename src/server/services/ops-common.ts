@@ -4,6 +4,7 @@ import { AuthError } from "@/lib/access";
 import { isAdminRole } from "@/lib/auth";
 import { ApiError, isUuid } from "@/lib/api-route";
 import { text, numberValue, money } from "@/lib/api-input";
+import { normalizeDigits } from "@/lib/units";
 
 export type Actor = StaffSession;
 export type Input = Record<string, unknown>;
@@ -60,6 +61,19 @@ export function page(options: ListOptions = {}) {
   if (limit < 1 || current < 1) throw new ApiError(422, "VALIDATION_ERROR", "পৃষ্ঠা সঠিক নয়");
   return { q: text(options.q, "অনুসন্ধান", 100) ?? "", limit, page: current, offset: (current - 1) * limit };
 }
+/**
+ * Search terms for a free-text query: the raw text (for name matching)
+ * plus a digit-normalized copy. Staff type phone numbers and codes
+ * with BENGALI digits (০১৭…), but phones/codes are stored with Latin
+ * digits — and JS digit classes ignore Bengali digits entirely, so a
+ * raw query never matches them. Match phone/code columns against
+ * `normalized` (or the digit-only `digits`).
+ */
+export function searchTerms(q: string) {
+  const normalized = normalizeDigits(q);
+  return { raw: q, normalized, digits: normalized.replace(/\D/g, "") };
+}
+
 export function changedFields(input: Input) {
   return Object.keys(input).filter((key) => !/password|secret|token/i.test(key));
 }

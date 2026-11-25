@@ -6,6 +6,7 @@ import { Sparkles, CheckCircle2, Clock, ArrowUpDown } from "lucide-react";
 import { db } from "@/db";
 import { garmentTypes, orderItems, orders, tasks, workers } from "@/db/schema";
 import { PageHead, Empty } from "@/components/admin/PageHead";
+import { LiveSelectFilter } from "@/components/admin/LiveFilters";
 import { Pagination } from "@/components/admin/Pagination";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -120,27 +121,22 @@ export default async function TasksPage({
       {/* filter bar — every control is h-10 so nothing sits crooked */}
       <Card>
         <CardContent className="pt-5">
-          <form method="get" className="flex flex-wrap items-center gap-3">
-            <input type="hidden" name="page" value="1" />
+          <div className="flex flex-wrap items-center gap-3">
             <div className="w-full sm:w-[260px]">
-              <Select name="worker" defaultValue={sp.worker ?? "all"}>
-                <SelectTrigger aria-label="কারিগর ফিল্টার" className="h-10">
-                  <SelectValue placeholder="সবার কাজ" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">সবার কাজ ({allRows.length})</SelectItem>
-                  <SelectItem value="unassigned">বণ্টন ছাড়া ({allRows.filter((r) => !r.t.workerId).length})</SelectItem>
-                  {workerRows.map((w) => (
-                    <SelectItem key={w.id} value={w.id}>
-                      {w.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <LiveSelectFilter
+                param="worker"
+                value={sp.worker ?? "all"}
+                params={{}}
+                options={[
+                  { value: "all", label: `সবার কাজ (${allRows.length})` },
+                  { value: "unassigned", label: `বণ্টন ছাড়া (${allRows.filter((r) => !r.t.workerId).length})` },
+                  ...workerRows.map((w) => ({ value: w.id, label: w.name })),
+                ]}
+                ariaLabel="কারিগর ফিল্টার"
+                className="h-10"
+                placeholder="সবার কাজ"
+              />
             </div>
-            <Button type="submit" className="h-10">
-              ফিল্টার করুন
-            </Button>
             <Button asChild type="button" variant="outline" className="h-10">
               <Link href="/admin/tasks">রিসেট</Link>
             </Button>
@@ -148,7 +144,7 @@ export default async function TasksPage({
               <ArrowUpDown className="size-3.5" />
               ডেডলাইন অনুযায়ী সাজানো
             </span>
-          </form>
+          </div>
         </CardContent>
       </Card>
 

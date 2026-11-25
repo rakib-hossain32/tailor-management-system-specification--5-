@@ -6,7 +6,7 @@ import { asc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { tasks, workers } from "@/db/schema";
 import { PageHead, Empty } from "@/components/admin/PageHead";
-import { PrintButton } from "@/components/PrintButton";
+import { Button } from "@/components/ui/button";
 import { taka } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -64,7 +64,9 @@ export default async function PayrollPage() {
         sub="পিস-রেট অনুযায়ী জমা মজুরি — QC পাস হলেই যোগ হয়। প্রিন্ট করে স্বাক্ষরসহ সংরক্ষণ করা যায়।"
         actions={
           <span className="no-print flex flex-wrap gap-2.5">
-            <PrintButton label="পেরোল শিট প্রিন্ট / PDF" />
+            <Button asChild>
+              <Link href="/api/v1/admin/payroll">পেরোল শিট PDF ডাউনলোড</Link>
+            </Button>
             <Link href="/admin/workers" className="rounded-sm border border-ink/30 px-4 py-2.5 text-[15px] hover:bg-ink/5">
               কারিগর তালিকা
             </Link>
