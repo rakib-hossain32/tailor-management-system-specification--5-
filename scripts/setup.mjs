@@ -12,7 +12,7 @@ if (!existsSync(localEnv)) {
     "# Generated local configuration. The existing cloud .env is preserved.",
     `DATABASE_URL=postgresql://postgres:${password}@127.0.0.1:${port}/app_db`,
     `AUTH_SECRET=${randomBytes(32).toString("hex")}`,
-    "LOCAL_DEMO_MODE=true",
+    "LOCAL_DEMO_MODE=false",
     `LOCAL_DB_PORT=${port}`,
     "",
   ].join("\n"), { mode: 0o600, flag: "wx" });
@@ -38,5 +38,4 @@ await run("scripts/local-db.mjs", ["start"]);
 await run("node_modules/drizzle-kit/bin.cjs", ["migrate", "--config=drizzle.config.ts"]);
 await run("scripts/seed.mjs");
 console.log("\nSetup complete. Run npm run dev and open http://localhost:3000");
-console.log("Admin: admin@rahimantailors.com / admin123");
-console.log("Worker: worker@rahimantailors.com / worker123");
+console.log("No demo accounts or customer/order records were created.");

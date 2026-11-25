@@ -16,10 +16,16 @@ const catalog = JSON.parse(readFileSync(resolve("scripts/data/catalog.json"), "u
     basePrice: string; defaultDeliveryDays: number; defaultFabricEstimate: string | null; sortOrder: number;
     stageRates: Record<string, string> }>;
 };
+const siteContent = JSON.parse(readFileSync(resolve("scripts/data/site-content.json"), "utf8")) as {
+  shop: { nameBn: string; nameEn: string; tagline: string; address: string; phone: string; email: string; whatsapp: string;
+    facebookUrl: string; foundedYear: number; timezone: string; currency: string; invoiceFooter: string };
+  pages: Array<{ slug: string; title: string; intro: string; seoTitle: string; seoDescription: string }>;
+  sections: Array<{ pageSlug: string; kind: string; heading?: string; body?: string; subtitle?: string; label?: string;
+    position: number; published?: boolean; data?: Record<string, unknown>; mediaKey?: string }>;
+  gallery: Array<{ key: string; category: string; title: string; caption: string }>;
+};
 const adminEmail = (process.env.ADMIN_EMAIL || "admin@tailorpro.local").trim().toLowerCase();
 const adminPassword = process.env.ADMIN_PASSWORD || randomBytes(18).toString("base64url");
-const titles: Record<string, string> = { home: "মাপ ও পোশাক সেবা", about: "আমাদের সম্পর্কে", services: "সেবা ও মূল্য",
-  gallery: "গ্যালারি", contact: "যোগাযোগ", "how-it-works": "কীভাবে কাজ করে", terms: "শর্তাবলি", privacy: "গোপনীয়তা" };
 
 try {
   let createdAdmin = false;
@@ -54,12 +60,18 @@ try {
       }
       await tx.insert(schema.serviceDetails).values({ garmentTypeId: garment.id, featured: true, updatedBy: admin.id }).onConflictDoNothing();
     }
-    await tx.insert(schema.shopSettings).values({ id: 1, nameBn: process.env.SHOP_NAME || "TailorPro", nameEn: process.env.SHOP_NAME || "TailorPro", updatedBy: admin.id }).onConflictDoNothing();
+    const shopDefaults = {
+      ...siteContent.shop,
+      nameBn: process.env.SHOP_NAME || siteContent.shop.nameBn,
+      nameEn: process.env.SHOP_NAME || siteContent.shop.nameEn,
+      updatedBy: admin.id,
+    };
+    await tx.insert(schema.shopSettings).values({ id: 1, ...shopDefaults }).onConflictDoNothing();
     for (let weekday = 0; weekday < 7; weekday++) {
       await tx.insert(schema.shopHours).values({ shopId: 1, weekday, closed: weekday === 5, opensAtMinute: 600, closesAtMinute: 1260, slotMinutes: 30 }).onConflictDoNothing();
     }
-    for (const [slug, title] of Object.entries(titles)) {
-      await tx.insert(schema.sitePages).values({ slug, title, updatedBy: admin.id }).onConflictDoNothing();
+    for (const page of siteContent.pages) {
+      await tx.insert(schema.sitePages).values({ ...page, published: true, updatedBy: admin.id }).onConflictDoNothing();
     }
     let registeredImages = 0;
     const directory = resolve("public/images");
@@ -74,8 +86,86 @@ try {
       await tx.insert(schema.galleryEntries).values({ mediaAssetId: asset.id, title: key.replaceAll("-", " "), position: registeredImages, createdBy: admin.id }).onConflictDoNothing();
       registeredImages++;
     }
+    const siteSeed = await tx.select({ key: schema.settings.key }).from(schema.settings)
+      .where(eq(schema.settings.key, "site-content-v1")).limit(1);
+    if (!siteSeed.length) {
+      const [shop] = await tx.select().from(schema.shopSettings).where(eq(schema.shopSettings.id, 1)).limit(1);
+      if (shop && (!shop.address || shop.nameBn === "TailorPro")) {
+        await tx.update(schema.shopSettings).set({ ...shopDefaults, updatedAt: new Date() }).where(eq(schema.shopSettings.id, 1));
+      }
+      for (const page of siteContent.pages) {
+        const [current] = await tx.select().from(schema.sitePages).where(eq(schema.sitePages.slug, page.slug)).limit(1);
+        if (!current) {
+          await tx.insert(schema.sitePages).values({ ...page, published: true, updatedBy: admin.id });
+        } else if (!current.intro && !current.seoTitle && current.title !== page.title) {
+          await tx.update(schema.sitePages).set({ ...page, published: true, updatedBy: admin.id, updatedAt: new Date() })
+            .where(eq(schema.sitePages.slug, page.slug));
+        }
+      }
+      const mediaRows = await tx.select({ id: schema.mediaAssets.id, key: schema.mediaAssets.key }).from(schema.mediaAssets);
+      const mediaByKey = new Map(mediaRows.map((asset) => [asset.key, asset.id]));
+      for (const pageSlug of [...new Set(siteContent.sections.map((section) => section.pageSlug))]) {
+        const existingSections = await tx.select({ id: schema.siteSections.id }).from(schema.siteSections)
+          .where(eq(schema.siteSections.pageSlug, pageSlug)).limit(1);
+        if (existingSections.length) continue;
+        const defaults = siteContent.sections.filter((section) => section.pageSlug === pageSlug);
+        for (const section of defaults) {
+          const mediaAssetId = section.mediaKey ? mediaByKey.get(section.mediaKey) ?? null : null;
+          await tx.insert(schema.siteSections).values({
+            pageSlug,
+            kind: section.kind,
+            heading: section.heading ?? "",
+            body: section.body ?? "",
+            subtitle: section.subtitle ?? "",
+            label: section.label ?? "",
+            position: section.position,
+            published: section.published ?? true,
+            data: section.data ?? {},
+            mediaAssetId,
+            updatedBy: admin.id,
+          });
+        }
+      }
+      for (const entry of siteContent.gallery) {
+        const mediaAssetId = mediaByKey.get(entry.key);
+        if (!mediaAssetId) continue;
+        const [existing] = await tx.select().from(schema.galleryEntries)
+          .where(eq(schema.galleryEntries.mediaAssetId, mediaAssetId)).limit(1);
+        if (!existing) {
+          await tx.insert(schema.galleryEntries).values({
+            mediaAssetId, title: entry.title, caption: entry.caption, category: entry.category,
+            position: siteContent.gallery.indexOf(entry), published: true, createdBy: admin.id,
+          });
+        } else if (existing.title === entry.key.replaceAll("-", " ")) {
+          await tx.update(schema.galleryEntries).set({
+            title: entry.title, caption: entry.caption, category: entry.category,
+            position: siteContent.gallery.indexOf(entry), published: true, updatedAt: new Date(),
+          }).where(eq(schema.galleryEntries.id, existing.id));
+        }
+      }
+      const garmentByCode = new Map(catalog.garments.map((garment) => [garment.code, garment]));
+      for (const section of siteContent.sections.filter((row) => row.kind === "service")) {
+        const code = section.data?.code;
+        if (typeof code !== "string" || !garmentByCode.has(code)) continue;
+        const [garment] = await tx.select().from(schema.garmentCatalog).where(eq(schema.garmentCatalog.code, code)).limit(1);
+        if (!garment) continue;
+        const [details] = await tx.select().from(schema.serviceDetails)
+          .where(eq(schema.serviceDetails.garmentTypeId, garment.id)).limit(1);
+        if (details && !details.summary && details.features.length === 0) {
+          await tx.update(schema.serviceDetails).set({
+            summary: section.body ?? "",
+            features: Array.isArray(section.data?.features) ? section.data.features.filter((item): item is string => typeof item === "string") : [],
+            featured: true,
+            updatedBy: admin.id,
+            updatedAt: new Date(),
+          }).where(eq(schema.serviceDetails.garmentTypeId, garment.id));
+        }
+      }
+      await tx.insert(schema.settings).values({ key: "site-content-v1", value: { version: 1 }, updatedAt: new Date() }).onConflictDoNothing();
+    }
     await tx.insert(schema.settings).values({ key: "initialization", value: { version: 1 } }).onConflictDoNothing();
-    return { adminCreated: createdAdmin, serviceDefinitions: catalog.garments.length, imageReferences: registeredImages, demoBusinessRecordsInserted: 0 };
+    return { adminCreated: createdAdmin, serviceDefinitions: catalog.garments.length, imageReferences: registeredImages,
+      restoredSiteContent: siteContent.sections.length, demoBusinessRecordsInserted: 0 };
   });
   if (createdAdmin) {
     mkdirSync(resolve(".local"), { recursive: true });

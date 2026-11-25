@@ -1,0 +1,1 @@
+ALTER TABLE "site_sections" ADD COLUMN "data" jsonb DEFAULT '{}'::jsonb NOT NULL;

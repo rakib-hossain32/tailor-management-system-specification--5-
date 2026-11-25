@@ -30,7 +30,7 @@ function fieldsFor(kind: Kind, state: ContentState): Field[] {
     { name: "logoAssetId", label: "লোগো", type: "media", nullable: true }, { name: "heroAssetId", label: "হোম পাতার ছবি", type: "media", nullable: true }, { name: "aboutAssetId", label: "পরিচিতি পাতার ছবি", type: "media", nullable: true },
   ];
   if (kind === "pages") return [{ name: "slug", label: "পাতা", type: "select", required: true, options: PAGES.map((value) => option(value)) }, { name: "title", label: "শিরোনাম", required: true }, { name: "intro", label: "ভূমিকা", type: "textarea" }, { name: "seoTitle", label: "সার্চ শিরোনাম" }, { name: "seoDescription", label: "সার্চ বিবরণ", type: "textarea" }, { name: "published", label: "প্রকাশিত", type: "boolean" }];
-  if (kind === "sections") return [{ name: "pageSlug", label: "পাতা", type: "select", required: true, options: state.pages.map((page) => option(page.slug, page.title)) }, { name: "kind", label: "অংশের ধরন", type: "select", required: true, options: ["hero", "benefit", "process", "paragraph", "testimonial", "team", "milestone", "faq", "policy"].map((value) => option(value)) }, { name: "heading", label: "শিরোনাম" }, { name: "body", label: "মূল লেখা", type: "textarea" }, { name: "subtitle", label: "সহশিরোনাম" }, { name: "label", label: "ছোট লেবেল" }, { name: "position", label: "ক্রম", type: "number", required: true }, media, { name: "personId", label: "সংশ্লিষ্ট ব্যক্তি", type: "select", nullable: true, options: state.people.map((person) => option(person.id, person.name)) }, { name: "published", label: "প্রকাশিত", type: "boolean" }];
+  if (kind === "sections") return [{ name: "pageSlug", label: "পাতা", type: "select", required: true, options: state.pages.map((page) => option(page.slug, page.title)) }, { name: "kind", label: "অংশের ধরন", type: "select", required: true, options: ["hero", "benefit", "process", "paragraph", "testimonial", "team", "milestone", "faq", "policy", "service", "statistic", "tracking", "cta", "showroom"].map((value) => option(value)) }, { name: "heading", label: "শিরোনাম" }, { name: "body", label: "মূল লেখা", type: "textarea" }, { name: "subtitle", label: "সহশিরোনাম" }, { name: "label", label: "ছোট লেবেল" }, { name: "position", label: "ক্রম", type: "number", required: true }, { name: "data", label: "অতিরিক্ত তথ্য (JSON)", type: "textarea" }, media, { name: "personId", label: "সংশ্লিষ্ট ব্যক্তি", type: "select", nullable: true, options: state.people.map((person) => option(person.id, person.name)) }, { name: "published", label: "প্রকাশিত", type: "boolean" }];
   if (kind === "services") return [{ name: "garmentTypeId", label: "পোশাক", type: "select", required: true, options: state.garments.map((garment) => option(garment.id, garment.nameBn)) }, { name: "summary", label: "বিবরণ", type: "textarea" }, { name: "features", label: "বৈশিষ্ট্য (প্রতি লাইনে একটি)", type: "lines" }, media, { name: "featured", label: "হোম পাতায় দেখান", type: "boolean" }];
   if (kind === "gallery") return [{ ...media, required: true, nullable: false }, { name: "title", label: "শিরোনাম", required: true }, { name: "caption", label: "বিবরণ", type: "textarea" }, { name: "category", label: "বিভাগ" }, { name: "position", label: "ক্রম", type: "number", required: true }, { name: "published", label: "প্রকাশিত", type: "boolean" }];
   return [];
@@ -46,7 +46,12 @@ function ContentForm({ kind, record = {}, state, saved }: { kind: Kind; record?:
     const body: Record<string, unknown> = {};
     for (const field of fields) {
       const value = String(values.get(field.name) ?? "");
-      body[field.name] = field.type === "boolean" ? values.has(field.name) : field.type === "number" ? value === "" && field.nullable ? null : Number(value) : field.type === "lines" ? value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) : value === "" && field.nullable ? null : value;
+      if (kind === "sections" && field.name === "data") {
+        try { body.data = JSON.parse(value || "{}"); }
+        catch { toast.error("অতিরিক্ত তথ্যের JSON সঠিক নয়।"); setBusy(false); return; }
+      } else {
+        body[field.name] = field.type === "boolean" ? values.has(field.name) : field.type === "number" ? value === "" && field.nullable ? null : Number(value) : field.type === "lines" ? value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) : value === "" && field.nullable ? null : value;
+      }
     }
     try {
       const update = !!existingId && ["sections", "gallery"].includes(kind);
@@ -63,7 +68,7 @@ function ContentForm({ kind, record = {}, state, saved }: { kind: Kind; record?:
     finally { setBusy(false); }
   }
   return <form onSubmit={submit} className="paper-card space-y-5 p-5 sm:p-7"><div className="grid gap-4 sm:grid-cols-2">{fields.map((field) => {
-    const value = record[field.name];
+    const value = kind === "sections" && field.name === "data" ? JSON.stringify(record.data ?? {}, null, 2) : record[field.name];
     if (field.type === "boolean") return <label key={field.name} className="flex items-center gap-2"><input type="checkbox" name={field.name} defaultChecked={value === true} />{field.label}</label>;
     const choices = field.type === "media" ? state.media.filter((asset) => asset.status === "ready").map((asset) => option(asset.id, asset.altText || asset.key)) : field.options;
     return <div key={field.name} className={`space-y-1.5 ${field.type === "textarea" || field.type === "lines" ? "sm:col-span-2" : ""}`}><Label htmlFor={`cms-${field.name}`}>{field.label}{field.required ? " *" : ""}</Label>{choices ? <select id={`cms-${field.name}`} name={field.name} required={field.required} defaultValue={String(value ?? "")} className="h-10 w-full rounded-md border border-ink/25 bg-white px-3"><option value="">নির্বাচন করুন</option>{choices.map((choice) => <option key={choice.value} value={choice.value}>{choice.label}</option>)}</select> : field.type === "textarea" || field.type === "lines" ? <Textarea id={`cms-${field.name}`} name={field.name} rows={field.type === "textarea" ? 5 : 4} defaultValue={Array.isArray(value) ? value.join("\n") : String(value ?? "")} /> : <Input id={`cms-${field.name}`} name={field.name} type={field.type === "number" || field.type === "email" ? field.type : "text"} required={field.required} defaultValue={String(value ?? (field.type === "number" && !field.nullable ? 0 : ""))} />}</div>;

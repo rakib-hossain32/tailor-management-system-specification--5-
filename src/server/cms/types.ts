@@ -6,7 +6,7 @@ export type PublicShop = {
 };
 export type PublicSection = {
   id: string; kind: string; heading: string; body: string; subtitle: string; label: string;
-  position: number; imageUrl: string | null; personName: string | null;
+  position: number; imageUrl: string | null; personName: string | null; data: Record<string, unknown>;
 };
 export type PublicSitePage = {
   slug: string; title: string; intro: string; seoTitle: string; seoDescription: string; sections: PublicSection[];

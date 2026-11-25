@@ -3,8 +3,10 @@
  * test records, and cleanup uses their exact IDs. Run after npm run setup/dev.
  */
 import { createHmac, randomInt, randomUUID } from "node:crypto";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { Pool } from "pg";
-import { loadProjectEnv } from "./lib/env.mjs";
+import { loadProjectEnv, projectRoot } from "./lib/env.mjs";
 
 loadProjectEnv();
 let checks = 0;
@@ -32,12 +34,23 @@ check(typeof process.env.AUTH_SECRET === "string" && process.env.AUTH_SECRET.len
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, application_name: "tailorpro-integration-check", connectionTimeoutMillis: 5000, max: 3 });
 const runId = randomUUID();
 const marker = "integration:" + runId;
+const personIds = new Set();
+const personKeys = [];
 const customerIds = new Set();
+const workerIds = new Set();
 const orderIds = new Set();
 const userIds = new Set();
 const appointmentIds = new Set();
-const ownedCustomerKeys = [];
 const unknownEmail = `integration-${runId}@example.invalid`;
+
+const credentialPath = resolve(projectRoot, ".local/admin-credentials.json");
+let savedCredentials = {};
+if (existsSync(credentialPath)) {
+  try { savedCredentials = JSON.parse(readFileSync(credentialPath, "utf8")); }
+  catch { throw new CheckFailure("The private local administrator credential file is invalid"); }
+}
+const adminEmail = process.env.INTEGRATION_ADMIN_EMAIL || savedCredentials.email || "";
+const adminPassword = process.env.INTEGRATION_ADMIN_PASSWORD || savedCredentials.password || "";
 
 function jar() {
   const values = new Map();
@@ -79,10 +92,44 @@ async function together(jobs) {
 async function unusedPhone() {
   for (let attempt = 0; attempt < 20; attempt += 1) {
     const phone = "+88013" + String(randomInt(10_000_000, 100_000_000));
-    const result = await pool.query("SELECT id FROM customers WHERE phone = $1", [phone]);
+    const result = await pool.query("SELECT id FROM people WHERE phone = $1", [phone]);
     if (!result.rowCount) return phone;
   }
   throw new CheckFailure("Could not reserve a synthetic test phone");
+}
+function rememberPerson({ phone = null, email = null }) {
+  personKeys.push({ phone, email });
+}
+async function createTestWorker(admin, stage, withLogin = false) {
+  const phone = await unusedPhone();
+  const email = "integration-" + runId + "-" + stage + "@example.invalid";
+  const name = "Integration " + stage + " worker " + runId;
+  const password = withLogin ? randomUUID() + "aA9!" : undefined;
+  rememberPerson({ phone, email });
+  const result = await request("/api/v1/admin/workers", {
+    method: "POST", cookies: admin,
+    body: { name, phone, email, role: stage, ...(password ? { password } : {}) },
+  });
+  status(result, 201, "create temporary " + stage + " worker");
+  const worker = result.data?.data;
+  check(typeof worker?.id === "string", "temporary " + stage + " worker must be created");
+  workerIds.add(worker.id);
+  return { ...worker, email, password };
+}
+async function createTestReception(admin) {
+  const phone = await unusedPhone();
+  const email = "integration-" + runId + "-reception@example.invalid";
+  const password = randomUUID() + "aA9!";
+  rememberPerson({ phone, email });
+  const result = await request("/api/v1/admin/users", {
+    method: "POST", cookies: admin,
+    body: { name: "Integration reception " + runId, phone, email, role: "reception", password },
+  });
+  status(result, 201, "create temporary reception account");
+  const user = result.data?.data;
+  check(typeof user?.id === "string", "temporary reception account must be created");
+  userIds.add(user.id);
+  return { ...user, email, password };
 }
 function dhakaDate(offset) {
   const parts = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dhaka", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date()).map((part) => [part.type, part.value]));
@@ -100,47 +147,75 @@ async function cleanup() {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    // Discover only responses potentially lost to an HTTP timeout, using the
-    // unique names/phones registered before their requests.
-    for (const key of ownedCustomerKeys) {
-      const found = await client.query("SELECT id FROM customers WHERE name = $1 AND phone = $2", [key.name, key.phone]);
-      for (const row of found.rows) customerIds.add(row.id);
+    // Recover records when an API response timed out after the transaction committed.
+    for (const key of personKeys) {
+      const found = await client.query(
+        "SELECT id FROM people WHERE ($1::text IS NOT NULL AND phone = $1) OR ($2::text IS NOT NULL AND email = $2)",
+        [key.phone, key.email],
+      );
+      for (const row of found.rows) personIds.add(row.id);
     }
-    const foundUsers = await client.query("SELECT id FROM users WHERE email = $1", [unknownEmail]);
-    for (const row of foundUsers.rows) userIds.add(row.id);
+    if (personIds.size) {
+      const ids = [...personIds];
+      const foundCustomers = await client.query("SELECT id FROM customers WHERE person_id = ANY($1::uuid[])", [ids]);
+      const foundWorkers = await client.query("SELECT id FROM workers WHERE person_id = ANY($1::uuid[])", [ids]);
+      const foundUsers = await client.query("SELECT id FROM users WHERE person_id = ANY($1::uuid[])", [ids]);
+      for (const row of foundCustomers.rows) customerIds.add(row.id);
+      for (const row of foundWorkers.rows) workerIds.add(row.id);
+      for (const row of foundUsers.rows) userIds.add(row.id);
+    }
     if (customerIds.size) {
       const foundOrders = await client.query("SELECT id FROM orders WHERE customer_id = ANY($1::uuid[]) AND notes = $2", [[...customerIds], marker]);
       for (const row of foundOrders.rows) orderIds.add(row.id);
-      const foundAppointments = await client.query("SELECT id FROM appointments WHERE customer_id = ANY($1::uuid[]) AND notes = $2", [[...customerIds], marker]);
+    }
+    if (personIds.size) {
+      const foundAppointments = await client.query("SELECT id FROM appointments WHERE person_id = ANY($1::uuid[]) AND notes = $2", [[...personIds], marker]);
       for (const row of foundAppointments.rows) appointmentIds.add(row.id);
     }
     const ids = [...orderIds];
+    const paymentIds = ids.length
+      ? (await client.query("SELECT id FROM payments WHERE order_id = ANY($1::uuid[])", [ids])).rows.map((row) => row.id)
+      : [];
+    let profileIds = [];
+    let measurementSetIds = [];
+    if (customerIds.size) {
+      profileIds = (await client.query("SELECT id FROM measurement_profiles WHERE customer_id = ANY($1::uuid[])", [[...customerIds]])).rows.map((row) => row.id);
+      if (profileIds.length) {
+        measurementSetIds = (await client.query("SELECT id FROM measurement_sets WHERE profile_id = ANY($1::uuid[])", [profileIds])).rows.map((row) => row.id);
+      }
+    }
+    const relatedIds = [...new Set([
+      ...personIds, ...customerIds, ...workerIds, ...userIds, ...appointmentIds,
+      ...orderIds, ...paymentIds, ...measurementSetIds,
+    ])];
+    await client.query(
+      "DELETE FROM audit_logs WHERE actor_id = ANY($1::uuid[]) OR entity_id = ANY($2::text[])",
+      [[...userIds], relatedIds],
+    );
     if (ids.length) {
       const notifications = await client.query("SELECT id FROM notifications WHERE related_order_id = ANY($1::uuid[])", [ids]);
-      const payments = await client.query("SELECT id FROM payments WHERE order_id = ANY($1::uuid[])", [ids]);
       const history = await client.query("SELECT id FROM order_status_history WHERE order_id = ANY($1::uuid[])", [ids]);
       const items = await client.query("SELECT id FROM order_items WHERE order_id = ANY($1::uuid[])", [ids]);
-      const tasks = await client.query("SELECT id FROM tasks WHERE order_item_id = ANY($1::uuid[])", [items.rows.map((row) => row.id)]);
+      const itemIds = items.rows.map((row) => row.id);
+      const tasks = itemIds.length ? await client.query("SELECT id FROM tasks WHERE order_item_id = ANY($1::uuid[])", [itemIds]) : { rows: [] };
       await client.query("DELETE FROM notifications WHERE id = ANY($1::uuid[])", [notifications.rows.map((row) => row.id)]);
-      await client.query("DELETE FROM payments WHERE id = ANY($1::uuid[])", [payments.rows.map((row) => row.id)]);
+      await client.query("DELETE FROM payments WHERE id = ANY($1::uuid[])", [paymentIds]);
       await client.query("DELETE FROM order_status_history WHERE id = ANY($1::uuid[])", [history.rows.map((row) => row.id)]);
       await client.query("DELETE FROM tasks WHERE id = ANY($1::uuid[])", [tasks.rows.map((row) => row.id)]);
-      await client.query("DELETE FROM order_items WHERE id = ANY($1::uuid[])", [items.rows.map((row) => row.id)]);
+      await client.query("DELETE FROM order_items WHERE id = ANY($1::uuid[])", [itemIds]);
       await client.query("DELETE FROM orders WHERE id = ANY($1::uuid[])", [ids]);
     }
     await client.query("DELETE FROM appointments WHERE id = ANY($1::uuid[])", [[...appointmentIds]]);
-    if (customerIds.size) {
-      const profiles = await client.query("SELECT id FROM measurement_profiles WHERE customer_id = ANY($1::uuid[])", [[...customerIds]]);
-      const sets = await client.query("SELECT id FROM measurement_sets WHERE profile_id = ANY($1::uuid[])", [profiles.rows.map((row) => row.id)]);
-      await client.query("DELETE FROM measurement_sets WHERE id = ANY($1::uuid[])", [sets.rows.map((row) => row.id)]);
-      await client.query("DELETE FROM measurement_profiles WHERE id = ANY($1::uuid[])", [profiles.rows.map((row) => row.id)]);
-      await client.query("DELETE FROM customers WHERE id = ANY($1::uuid[])", [[...customerIds]]);
-    }
+    await client.query("DELETE FROM measurement_sets WHERE id = ANY($1::uuid[])", [measurementSetIds]);
+    await client.query("DELETE FROM measurement_profiles WHERE id = ANY($1::uuid[])", [profileIds]);
+    await client.query("DELETE FROM customers WHERE id = ANY($1::uuid[])", [[...customerIds]]);
     if (userIds.size) {
-      const workers = await client.query("SELECT id FROM workers WHERE user_id = ANY($1::uuid[])", [[...userIds]]);
-      await client.query("DELETE FROM workers WHERE id = ANY($1::uuid[])", [workers.rows.map((row) => row.id)]);
-      await client.query("DELETE FROM users WHERE id = ANY($1::uuid[])", [[...userIds]]);
+      await client.query("DELETE FROM order_draft_items WHERE draft_user_id = ANY($1::uuid[])", [[...userIds]]);
+      await client.query("DELETE FROM order_drafts WHERE user_id = ANY($1::uuid[])", [[...userIds]]);
     }
+    await client.query("DELETE FROM workers WHERE id = ANY($1::uuid[])", [[...workerIds]]);
+    await client.query("DELETE FROM users WHERE id = ANY($1::uuid[])", [[...userIds]]);
+    await client.query("DELETE FROM people WHERE id = ANY($1::uuid[])", [[...personIds]]);
     await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK");
@@ -163,13 +238,20 @@ async function run() {
     check(result.headers.get("content-type")?.includes("text/html") && result.raw.length > 100, path + " must render HTML");
   }
 
-  const owner = (await pool.query("SELECT id, name, role FROM users WHERE email = $1 AND role = 'owner' AND is_active = true", ["admin@rahimantailors.com"])).rows[0];
-  check(Boolean(owner), "Complete local demo seed is required");
+  check(Boolean(adminEmail && adminPassword), "Run local setup or set INTEGRATION_ADMIN_EMAIL and INTEGRATION_ADMIN_PASSWORD");
+  const owner = (await pool.query(
+    "SELECT u.id, p.name, u.role FROM users u JOIN people p ON p.id = u.person_id WHERE p.email = $1 AND u.role = 'owner' AND u.is_active = true",
+    [adminEmail.toLowerCase()],
+  )).rows[0];
+  check(Boolean(owner), "Configured local owner account must exist in the loopback database");
   const probePhone = await unusedPhone();
   const probeName = "Integration probe " + runId;
+  const probePersonId = randomUUID();
   const probeId = randomUUID();
-  ownedCustomerKeys.push({ name: probeName, phone: probePhone });
-  await pool.query("INSERT INTO customers (id, name, phone, portal_enabled) VALUES ($1,$2,$3,false)", [probeId, probeName, probePhone]);
+  rememberPerson({ phone: probePhone });
+  personIds.add(probePersonId);
+  await pool.query("INSERT INTO people (id, name, phone) VALUES ($1, $2, $3)", [probePersonId, probeName, probePhone]);
+  await pool.query("INSERT INTO customers (id, person_id, portal_enabled) VALUES ($1, $2, false)", [probeId, probePersonId]);
   customerIds.add(probeId);
   // A read-only cookie based on this local secret confirms that APP_URL is
   // connected to this exact local database before HTTP mutation checks.
@@ -192,15 +274,21 @@ async function run() {
     status(await request(path, { method, ...(method === "POST" ? { body: {} } : {}) }), 401, "anonymous " + method + " " + path);
   }
   const beforeUsers = Number((await pool.query("SELECT count(*) AS n FROM users")).rows[0].n);
+  rememberPerson({ email: unknownEmail });
   const unknown = await request("/api/v1/auth/staff", { method: "POST", body: { identifier: unknownEmail, password: "integration-password" } });
-  const unknownUsers = await pool.query("SELECT id FROM users WHERE email = $1", [unknownEmail]);
+  const unknownUsers = await pool.query("SELECT u.id FROM users u JOIN people p ON p.id = u.person_id WHERE p.email = $1", [unknownEmail]);
   for (const row of unknownUsers.rows) userIds.add(row.id);
   status(unknown, 401, "unknown staff must not register during login");
   check(Number((await pool.query("SELECT count(*) AS n FROM users")).rows[0].n) === beforeUsers, "Staff login must not create user records");
 
-  const admin = await login("admin@rahimantailors.com", "admin123", "owner");
-  const worker = await login("worker@rahimantailors.com", "worker123", "worker");
-  const reception = await login("reception@rahimantailors.com", "reception123", "reception");
+  const admin = await login(adminEmail, adminPassword, "owner");
+  const receptionAccount = await createTestReception(admin);
+  const testWorkers = {};
+  for (const stage of ["cutting", "stitching", "finishing"]) {
+    testWorkers[stage] = await createTestWorker(admin, stage, stage === "stitching");
+  }
+  const worker = await login(testWorkers.stitching.email, testWorkers.stitching.password, "worker");
+  const reception = await login(receptionAccount.email, receptionAccount.password, "reception");
   for (const [path, method] of guarded) {
     status(await request(path, { method, cookies: worker, ...(method === "POST" ? { body: {} } : {}) }), 403, "worker " + method + " " + path);
   }
@@ -208,8 +296,8 @@ async function run() {
 
   const phone = await unusedPhone();
   const name = "Integration customer " + runId;
-  ownedCustomerKeys.push({ name, phone });
-  const customer = await request("/api/v1/customers", { method: "POST", cookies: admin, body: { name, phone, tags: ["integration"] } });
+  rememberPerson({ phone });
+  const customer = await request("/api/v1/customers", { method: "POST", cookies: admin, body: { name, phone, tags: ["integration"], portal_enabled: true } });
   if (typeof customer.data?.id === "string") customerIds.add(customer.data.id);
   status(customer, 201, "create synthetic customer");
   const customerId = customer.data.id;
@@ -217,8 +305,8 @@ async function run() {
   status(profiles, 200, "new customer profiles");
   check(profiles.data?.profiles?.length === 1 && profiles.data.profiles[0].is_default === true, "Customer creation must atomically create a default measurement profile");
   const profileId = profiles.data.profiles[0].id;
-  const garment = (await pool.query("SELECT id, base_price, measurement_schema FROM garment_types WHERE is_active = true AND base_price > 25 ORDER BY sort_order LIMIT 1")).rows[0];
-  check(Boolean(garment), "An active demo garment with a base price is required");
+  const garment = (await pool.query("SELECT g.id, g.base_price, v.measurement_schema FROM garment_types g JOIN garment_schema_versions v ON v.id = g.active_schema_version_id WHERE g.is_active = true AND g.base_price > 25 ORDER BY g.sort_order LIMIT 1")).rows[0];
+  check(Boolean(garment), "An active configured garment with a base price is required");
   const values = {};
   for (const group of garment.measurement_schema.groups) {
     for (const field of group.fields) {
@@ -228,11 +316,11 @@ async function run() {
   const measurement = await request("/api/v1/measurements", { method: "POST", cookies: admin, body: { profile_id: profileId, garment_type_id: garment.id, unit_entered: "cm", values, verified: true } });
   status(measurement, 201, "create validated measurement snapshot");
 
-  const activeWorkers = (await pool.query("SELECT w.id, w.role, w.name, u.email FROM workers w LEFT JOIN users u ON u.id = w.user_id WHERE w.is_active = true ORDER BY w.name")).rows;
-  const linkedWorker = activeWorkers.find((row) => row.email === "worker@rahimantailors.com");
-  check(Boolean(linkedWorker), "Demo worker must have an explicit active user link");
-  const manual = Object.fromEntries(["cutting", "stitching", "finishing"].map((stage) => [stage, (activeWorkers.find((row) => row.id === linkedWorker.id && row.role === stage) ?? activeWorkers.find((row) => row.role === stage))?.id]));
-  check(Object.values(manual).every(Boolean), "Each task stage needs an active demo worker");
+  const activeWorkers = (await pool.query("SELECT w.id, w.role, p.name, p.email FROM workers w JOIN people p ON p.id = w.person_id WHERE w.is_active = true ORDER BY p.name")).rows;
+  const linkedWorker = activeWorkers.find((row) => row.email === testWorkers.stitching.email);
+  check(Boolean(linkedWorker), "Temporary stitching worker must have an explicit active user link");
+  const manual = Object.fromEntries(["cutting", "stitching", "finishing"].map((stage) => [stage, testWorkers[stage].id]));
+  check(Object.values(manual).every(Boolean), "Each task stage needs an active test worker");
   const order = await request("/api/v1/orders", { method: "POST", cookies: admin, body: {
     customer_id: customerId, delivery_date: dhakaDate(14), assignment_mode: "manual", manual_workers: manual, notes: marker,
     items: [{ garment_type_id: garment.id, profile_id: profileId, measurement_set_id: measurement.data.id, quantity: 2, fabric_source: "customer" }],
@@ -243,7 +331,7 @@ async function run() {
   const line = (await pool.query("SELECT unit_price, quantity, measurement_set_id FROM order_items WHERE order_id = $1", [orderId])).rows[0];
   check(Number(line?.unit_price) === Number(garment.base_price) && line.quantity === 2, "Order lines must retain the resolved garment base price");
   check(line.measurement_set_id === measurement.data.id, "Order must pin the submitted measurement snapshot");
-  const createdOrder = (await pool.query("SELECT total, paid_amount, due_amount FROM orders WHERE id = $1", [orderId])).rows[0];
+  const createdOrder = (await pool.query("SELECT total, paid_amount, due_amount FROM order_summaries WHERE id = $1", [orderId])).rows[0];
   check(Number(createdOrder.total) === Number(garment.base_price) * 2 && Number(createdOrder.paid_amount) === 0, "Order totals must agree with resolved line prices");
   const createdTasks = (await pool.query("SELECT t.id, t.worker_id FROM tasks t JOIN order_items i ON i.id = t.order_item_id WHERE i.order_id = $1", [orderId])).rows;
   const ownTask = createdTasks.find((task) => task.worker_id === linkedWorker.id);
@@ -261,7 +349,7 @@ async function run() {
   for (const result of paymentPair) status(result, 200, "concurrent idempotent payment");
   check(paymentPair[0].data.receipt_no === paymentPair[1].data.receipt_no, "Duplicate payments must return the same receipt");
   check(paymentPair.filter((result) => result.data.duplicate === true).length === 1, "Exactly one concurrent payment must be marked duplicate");
-  const paid = (await pool.query("SELECT paid_amount, due_amount FROM orders WHERE id = $1", [orderId])).rows[0];
+  const paid = (await pool.query("SELECT paid_amount, due_amount FROM order_summaries WHERE id = $1", [orderId])).rows[0];
   const paymentCount = (await pool.query("SELECT count(*)::int AS n FROM payments WHERE order_id = $1", [orderId])).rows[0].n;
   check(paymentCount === 1 && Number(paid.paid_amount) === 25, "Concurrent retries must write one payment and add only 25");
   status(await request(`/api/v1/orders/${orderId}/payments`, { method: "POST", cookies: admin, body: { ...paymentBody, amount: 26 } }), 409, "changed idempotency payload");
@@ -310,7 +398,7 @@ async function run() {
   check((await pool.query("SELECT status FROM orders WHERE id = $1", [orderId])).rows[0].status === "ready", "Rejected override must preserve order status");
   status(await request(`/api/v1/orders/${orderId}/status`, { method: "POST", cookies: admin, body: { to: "delivered" } }), 409, "unpaid delivery without override");
   status(await request(`/api/v1/orders/${orderId}/status`, { method: "POST", cookies: admin, body: { to: "delivered", override_due: true, override_reason: "Integration approved delivery" } }), 200, "owner may explicitly override unpaid delivery");
-  const deliveryHistory = (await pool.query("SELECT changed_by FROM order_status_history WHERE order_id = $1 AND to_status = 'delivered'", [orderId])).rows;
+  const deliveryHistory = (await pool.query("SELECT changed_by FROM order_event_details WHERE order_id = $1 AND to_status = 'delivered'", [orderId])).rows;
   check(deliveryHistory.length === 1 && deliveryHistory[0].changed_by === owner.name, "Delivery override must record the authenticated staff actor");
 }
 

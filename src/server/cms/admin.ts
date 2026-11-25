@@ -25,8 +25,9 @@ const hoursInput = z.array(z.object({ weekday: z.number().int().min(0).max(6), c
 }).refine((row) => row.closesAtMinute > row.opensAtMinute, "Closing time must follow opening time")).length(7)
   .refine((rows) => new Set(rows.map((row) => row.weekday)).size === 7, "Each weekday must occur once");
 const pageInput = z.object({ slug: pageSlug, title: text(200).min(1), intro: text(5000), seoTitle: text(200), seoDescription: text(500), published: z.boolean() });
-const sectionInput = z.object({ pageSlug, kind: z.enum(["hero", "benefit", "process", "paragraph", "testimonial", "team", "milestone", "faq", "policy"]),
+const sectionInput = z.object({ pageSlug, kind: z.enum(["hero", "benefit", "process", "paragraph", "testimonial", "team", "milestone", "faq", "policy", "service", "statistic", "tracking", "cta", "showroom"]),
   heading: text(300), body: text(10000), subtitle: text(300), label: text(120), position: z.number().int().min(0).max(10000),
+  data: z.record(z.string(), z.unknown()).default({}),
   published: z.boolean(), mediaAssetId: mediaId, personId: id.nullable().optional() });
 const galleryInput = z.object({ mediaAssetId: id, title: text(200).min(1), caption: text(2000), category: text(100), position: z.number().int().min(0), published: z.boolean() });
 const serviceInput = z.object({ garmentTypeId: id, summary: text(5000), features: z.array(text(300)).max(20), featured: z.boolean(), mediaAssetId: mediaId });

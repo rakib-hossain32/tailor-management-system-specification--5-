@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, index, integer, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { garmentCatalog, people, userAccounts } from "./schema";
 
 const createdAt = () => timestamp("created_at", { withTimezone: true }).defaultNow().notNull();
@@ -80,6 +80,7 @@ export const siteSections = pgTable("site_sections", {
   body: text("body").notNull().default(""),
   subtitle: text("subtitle").notNull().default(""),
   label: text("label").notNull().default(""),
+  data: jsonb("data").$type<Record<string, unknown>>().notNull().default({}),
   mediaAssetId: uuid("media_asset_id").references(() => mediaAssets.id, { onDelete: "set null" }),
   personId: uuid("person_id").references(() => people.id, { onDelete: "set null" }),
   position: integer("position").notNull().default(0),

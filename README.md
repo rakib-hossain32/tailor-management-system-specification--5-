@@ -2,11 +2,21 @@
 
 বাংলা tailor management app: customer ও family measurement profiles, order pipeline, worker tasks/QC, payment, inventory, appointment এবং customer portal।
 
-## প্রথমবার চালানো
+## চালানো
 
 Node.js 22 বা নতুন LTS version এবং প্রথম install-এর জন্য internet লাগবে। Windows x64-এ আলাদা PostgreSQL installer বা Docker প্রয়োজন নেই; npm dependency থেকেই PostgreSQL binaries আসে।
 
-প্রজেক্ট folder-এ terminal খুলে চালাও:
+প্রজেক্টের `.env` বা `.env.local`-এ PostgreSQL সংযোগ আগে থেকেই থাকলে:
+
+```powershell
+npm install
+npm run dev
+```
+
+সাইট: **http://localhost:3000**  
+Database readiness: **http://localhost:3000/api/health**
+
+নতুন bundled local PostgreSQL তৈরি করতে:
 
 ```powershell
 npm install
@@ -14,24 +24,13 @@ npm run setup
 npm run dev
 ```
 
-সাইট: **http://localhost:3000**  
-Database readiness: **http://localhost:3000/api/health**
+`setup` শুধু loopback PostgreSQL-এ চলে। `.env.local` না থাকলে এটি random database password ও session secret দিয়ে local config তৈরি করে, `127.0.0.1:5432`-এ PostgreSQL চালায়, `app_db` তৈরি করে এবং schema ও প্রাথমিক shop/catalog configuration বসায়। এটি কোনো demo customer, order, worker বা hard-coded login তৈরি করে না। আগে থেকে থাকা `.env` বা `.env.local` overwrite হয় না; existing `.env.local`-এ remote URL থাকলে setup থেমে যায়।
 
-`setup` একটি random database password ও session secret দিয়ে `.env.local` তৈরি করে, `127.0.0.1:5432`-এ PostgreSQL চালায়, `app_db` তৈরি করে, migration ও demo seed চালায়। আগে থেকে থাকা `.env` এবং cloud database বদলায় না। আগে থেকে থাকা `.env.local`-ও overwrite হয় না।
+## Staff login
 
-## Demo login
+Staff login: **http://localhost:3000/staff-login**। প্রথম setup-এ তৈরি owner account-এর credentials `.local/admin-credentials.json`-এ থাকে; ফাইলটি Git-এ রাখা হয় না। `ADMIN_EMAIL` ও `ADMIN_PASSWORD` আগে থেকে environment-এ দিলে initialization সেগুলো ব্যবহার করে। কোনো demo worker বা customer account স্বয়ংক্রিয়ভাবে তৈরি হয় না।
 
-Staff login: **http://localhost:3000/staff-login**
-
-| Account | Email | Password |
-|---|---|---|
-| Admin / owner | admin@rahimantailors.com | admin123 |
-| Worker | worker@rahimantailors.com | worker123 |
-| Manager | manager@rahimantailors.com | manager123 |
-| Reception | reception@rahimantailors.com | reception123 |
-| Master / QC | master@rahimantailors.com | master123 |
-
-Customer portal: **http://localhost:3000/login**, demo phone **01712345678**। Development demo mode-এ OTP form-এ code দেখানো হয়। Worker account শুধু তার সঙ্গে যুক্ত worker profile-এর tasks ও earnings দেখতে পারে।
+Customer portal: **http://localhost:3000/login**। Portal-এ ঢুকতে সক্রিয় customer account এবং configured SMS provider দরকার। Local OTP preview আলাদা করে `LOCAL_DEMO_MODE=true` দিয়ে চালু করা যায়; এতে demo customer বা order তৈরি হয় না।
 
 ## পরেরবার চালানো
 
@@ -46,7 +45,7 @@ npm run dev
 npm run db:stop
 ```
 
-Database data `.local/postgres/`-এ থাকে এবং stop/start-এর পরও সংরক্ষিত থাকে। `npm run setup` আবার চালানো যায়; complete demo seed থাকলে সেটি আর insert করে না।
+Local database data `.local/postgres/`-এ থাকে এবং stop/start-এর পরও সংরক্ষিত থাকে। `npm run setup` local config ও database যাচাই করে; existing `.env.local` overwrite করে না।
 
 কোনো managed terminal background process বন্ধ করে দিলে `npm run db:start -- --foreground` দিয়ে database-এর terminal খোলা রাখো, এবং অন্য terminal-এ `npm run dev` চালাও।
 
@@ -59,7 +58,7 @@ Database data `.local/postgres/`-এ থাকে এবং stop/start-এর �
 | `npm run db:generate -- --name=your_change` | Schema পরিবর্তন থেকে SQL migration তৈরি |
 | `npm run db:migrate` | Checked-in migrations apply |
 | `npm run db:push` | Development database-এ সরাসরি schema sync |
-| `npm run db:seed` | Demo data initialize / safe completeness check |
+| `npm run db:seed` | Schema-র ওপর নির্ভর করা প্রাথমিক shop/catalog configuration idempotently তৈরি |
 | `npm run check` | ESLint ও TypeScript |
 | `npm run build` | Production build |
 | `npm run start` | Build করা app চালানো |
@@ -71,7 +70,25 @@ Integration checks শুধু loopback database ও `LOCAL_DEMO_MODE=true` con
 
 App ও scripts একই precedence অনুসরণ করে: process environment → `.env.local` → `.env`। `.env.example`-এ প্রয়োজনীয় variable আছে।
 
-নিজের PostgreSQL ব্যবহার করতে `.env.local`-এ তার `DATABASE_URL` এবং অন্তত ৩২ অক্ষরের random `AUTH_SECRET` দাও, তারপর `npm run db:migrate`। Demo চাইলে `npm run db:seed`। `db:start` শুধু এই প্রজেক্টের bundled cluster পরিচালনা করে।
+নিজের PostgreSQL ব্যবহার করতে `.env.local`-এ তার `DATABASE_URL` এবং অন্তত ৩২ অক্ষরের random `AUTH_SECRET` দাও, তারপর `npm run db:migrate` এবং `npm run db:initialize` চালাও। Initialization schema-র দরকারি shop/catalog configuration যোগ করে; customer/order demo records যোগ করে না। `db:start` শুধু এই প্রজেক্টের bundled local cluster পরিচালনা করে।
+
+## Cloudinary ছবি
+
+Cloudinary Dashboard-এর **Product Environment Credentials** থেকে `.env` বা `.env.local`-এ নিচের server-side variable-গুলো বসাও:
+
+```env
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+```
+
+`.env.example`-এ placeholder আছে; সেগুলো বদলে আসল credential না দিলে image upload চালু হবে না। Credential বসানোর পর public image-গুলো Cloudinary-তে পাঠিয়ে database-এ URL সংরক্ষণ করতে:
+
+```powershell
+npm run media:sync
+```
+
+`.env`/`.env.local` git-এ commit কোরো না।
 
 Port 5432 অন্য কোনো service ব্যবহার করলে প্রথম setup-এর আগে:
 
@@ -110,7 +127,7 @@ Staff login নতুন account নিজে থেকে বানায় ন�
 
 Payment retry একই idempotency key ও payload দিলে আগের receipt ফেরত দেয়। ভিন্ন payload একই key-তে বা বকেয়ার চেয়ে বেশি payment গ্রহণ করা হয় না। মজুরি QC pass হওয়ার পর earned হিসাবে ধরা হয়।
 
-Demo seed অসম্পূর্ণ বা পুরনো unmanaged data পেলে সেটি overwrite না করে থামে। `npm run db:seed -- --force` সম্পূর্ণ configured database-এর business data মুছে পুনরায় demo data বসায়; এটি কেবল disposable demo database-এর জন্য। এই setup workflow কখনও নিজে থেকে `--force` চালায় না।
+`db:seed` নিরাপদ initialization alias। এটি existing business data overwrite করে না; `--force` বন্ধ রাখা হয়েছে। Integration checks শুধু loopback database ও `LOCAL_DEMO_MODE=true`-তে চলে, test records তৈরি করে এবং শেষে সেগুলো মুছে দেয়।
 
 ## Local files
 
