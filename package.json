@@ -19,6 +19,7 @@
     "db:push": "drizzle-kit push --config=drizzle.config.ts",
     "db:seed": "node scripts/seed.mjs",
     "db:initialize": "node --conditions=react-server --import tsx scripts/initialize.ts",
+    "db:demo-accounts": "node --conditions=react-server --import tsx scripts/create-demo-accounts.ts",
     "media:sync": "node --conditions=react-server --import tsx scripts/media-sync.ts",
     "check": "npm run lint && npm run typecheck",
     "test:integration": "node scripts/integration-check.mjs"
@@ -45,6 +46,7 @@
     "jspdf": "^4.2.1",
     "lucide-react": "^1.77.0",
     "next": "16.4.6",
+    "pdfkit": "^0.17.2",
     "pg": "8.20.0",
     "qrcode": "^1.5.4",
     "react": "19.2.6",
@@ -58,6 +60,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "4.1.17",
     "@types/node": "22.19.15",
+    "@types/pdfkit": "^0.17.3",
     "@types/pg": "8.18.0",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",

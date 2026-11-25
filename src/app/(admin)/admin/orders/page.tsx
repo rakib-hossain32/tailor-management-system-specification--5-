@@ -8,6 +8,7 @@ import { StatusBadge, DueBadge, UrgentBadge } from "@/components/StatusBadge";
 import { Pagination } from "@/components/admin/Pagination";
 import { QrScanner } from "@/components/QrScanner";
 import { PageHead } from "@/components/admin/PageHead";
+import { PageGuide } from "@/components/admin/PageGuide";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -117,6 +118,14 @@ export default async function OrdersPage({
         }
       />
 
+      <PageGuide
+        items={[
+          ["সব অর্ডার এক জায়গায়", "স্ট্যাটাস ট্যাব আর খোঁজ দিয়ে যেকোনো অর্ডার বের করুন — অর্ডার নম্বর, কাস্টমারের নাম বা ফোন দিয়ে।"],
+          ["QR স্ক্যানে সরাসরি অর্ডার", "কাস্টমারের কার্ডের QR স্ক্যান করলেই তার মাপ ও অর্ডার খুলে যাবে — উপরের স্ক্যান বাটনটি ব্যবহার করুন।"],
+          ["অর্ডারে ক্লিক = বিস্তারিত", "স্ট্যাটাস বদল, পেমেন্ট নেওয়া, ইনভয়েস প্রিন্ট — সব কাজ অর্ডারের নিজের পেজে।"],
+        ]}
+      />
+
       {counts.overdue > 0 && (
         <Alert variant="destructive">
           <AlertDescription>
@@ -224,7 +233,7 @@ export default async function OrdersPage({
                 return (
                   <TableRow key={o.id}>
                     <TableCell>
-                      <Link href={`/admin/orders/${o.id}`} className="chalk-link num font-medium">
+                      <Link href={`/admin/orders/${o.id}`} className="chalk-link code font-medium">
                         {o.orderNo}
                       </Link>
                       <div className="mt-1 flex gap-1.5">

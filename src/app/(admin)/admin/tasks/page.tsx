@@ -180,7 +180,7 @@ export default async function TasksPage({
                       <div className="flex min-w-0 items-baseline justify-between gap-2">
                         <Link
                           href={`/admin/orders/${orderId}`}
-                          className="chalk-link num truncate text-[14px] font-medium"
+                          className="chalk-link code truncate text-[14px] font-medium"
                         >
                           {orderNo}
                         </Link>

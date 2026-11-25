@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { dateShort, daysUntil, relativeDay } from "@/lib/format";
 import { isOverdue } from "@/lib/order-status";
 import { moveTask } from "@/app/(admin)/admin/actions";
+import { QrScanner } from "@/components/QrScanner";
 import { redirect } from "next/navigation";
 import { getStaffSession } from "@/lib/access";
 
@@ -124,6 +125,7 @@ export default async function WorkerHome({
                 {active.skillTags.length > 0 && ` · ${active.skillTags.join(", ")}`}
               </p>
             </div>
+            <QrScanner />
 
                         {session?.workerId ? (
               <div className="w-full sm:w-auto">
@@ -216,7 +218,7 @@ export default async function WorkerHome({
                       <h2 className="mt-2 text-[24px] leading-tight">
                         {garment} <span className="num text-[18px] text-stone">×{qty}</span>
                       </h2>
-                      <p className="num mt-1 text-[14.5px] text-ink-3">
+                      <p className="code mt-1 text-[14.5px] text-ink-3">
                         অর্ডার {orderNo}
                       </p>
                     </div>

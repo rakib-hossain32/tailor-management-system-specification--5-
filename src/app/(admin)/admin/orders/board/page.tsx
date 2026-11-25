@@ -91,7 +91,7 @@ export default async function BoardPage() {
                         }`}
                       >
                         <div className="flex items-baseline justify-between gap-2">
-                          <Link href={`/admin/orders/${o.id}`} className="chalk-link num text-[13.5px]">
+                          <Link href={`/admin/orders/${o.id}`} className="chalk-link code text-[13.5px]">
                             {o.orderNo.slice(-7)}
                           </Link>
                           {o.priority === "urgent" && <UrgentBadge />}

@@ -377,7 +377,7 @@ export default async function CustomerDetailPage({
                   {p.method === "cash" ? "ক্যাশ" : p.method.toUpperCase()}
                   {p.txnId ? ` · ${p.txnId}` : ""}
                 </span>
-                <span className="num text-[13.5px] text-stone">{p.receiptNo}</span>
+                <span className="code text-[13.5px] text-stone">{p.receiptNo}</span>
                 <span className="ml-auto num text-[13.5px] text-stone">
                   {new Date(p.receivedAt).toLocaleString("en-GB", { timeZone: "Asia/Dhaka" })}
                 </span>

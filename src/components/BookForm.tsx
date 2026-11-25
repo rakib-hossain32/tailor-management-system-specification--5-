@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { CalendarIcon, Check, ChevronDown, FileDown, X } from "lucide-react";
-import Link from "next/link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -30,7 +29,14 @@ export interface BookGarment {
 const PURPOSES = ["নতুন মাপ", "ট্রায়াল", "ডেলিভারি/পিকআপ", "পরামর্শ", "অল্টারেশন"];
 const DAY_NAMES = ["রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার", "শুক্রবার", "শনিবার"];
 
-export function BookForm({ garments = [] }: { garments?: BookGarment[] }) {
+export function BookForm({
+  garments = [],
+  initialGarments = [],
+}: {
+  garments?: BookGarment[];
+  /** Names arriving from a service-card link (?garment=…) — preselected. */
+  initialGarments?: string[];
+}) {
   const shop = useShop();
   const [date, setDate] = useState<Date | undefined>(() => {
     const d = new Date();
@@ -43,7 +49,9 @@ export function BookForm({ garments = [] }: { garments?: BookGarment[] }) {
   const [slotsFor, setSlotsFor] = useState("");
   const [slot, setSlot] = useState("");
   const [purpose, setPurpose] = useState(PURPOSES[0]);
-  const [picked, setPicked] = useState<string[]>([]);
+  const [picked, setPicked] = useState<string[]>(() =>
+    initialGarments.filter((name) => garments.some((g) => g.nameBn === name)),
+  );
   const [garmentOpen, setGarmentOpen] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -121,6 +129,13 @@ export function BookForm({ garments = [] }: { garments?: BookGarment[] }) {
       const data = await res.json();
       if (!res.ok) {
         setMsg({ ok: false, title: "বুকিং হয়নি", text: data?.error?.message ?? "আবার চেষ্টা করুন" });
+        // Slot just filled up or passed — reload the day's slots so the
+        // customer can immediately pick another time.
+        if (res.status === 409 || res.status === 422) {
+          setSlot("");
+          setSlots([]);
+          setSlotsFor("");
+        }
       } else {
         setBooking({
           id: data.id as string,
@@ -254,16 +269,17 @@ export function BookForm({ garments = [] }: { garments?: BookGarment[] }) {
                   const active = picked.includes(garment.nameBn);
                   return (
                     <li key={garment.id}>
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
                         onClick={() => toggleGarment(garment.nameBn)}
                         aria-pressed={active}
-                        className="flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-md px-2.5 py-2 text-left text-base hover:bg-gold-light/50"
+                        className="flex min-h-11 w-full items-center justify-start gap-3 rounded-md px-2.5 py-2 text-left text-base font-normal hover:bg-gold-light/50"
                       >
                         <Checkbox checked={active} className="pointer-events-none" aria-hidden tabIndex={-1} />
                         <span className="flex-1">{garment.nameBn}</span>
                         {active && <Check className="size-4 shrink-0 text-gold-dark" />}
-                      </button>
+                      </Button>
                     </li>
                   );
                 })}
@@ -284,14 +300,16 @@ export function BookForm({ garments = [] }: { garments?: BookGarment[] }) {
                   className="inline-flex items-center gap-1.5 rounded-full border border-gold/50 bg-gold-light/40 py-1.5 pl-3.5 pr-2 text-[14.5px]"
                 >
                   {nameBn}
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
                     onClick={() => toggleGarment(nameBn)}
                     aria-label={`${nameBn} সরান`}
-                    className="grid size-6 place-items-center rounded-full hover:bg-gold/25"
+                    className="size-6 rounded-full hover:bg-gold/25"
                   >
                     <X className="size-3.5" />
-                  </button>
+                  </Button>
                 </li>
               ))}
             </ul>
@@ -393,17 +411,14 @@ export function BookForm({ garments = [] }: { garments?: BookGarment[] }) {
             <div className="mt-3 rounded-md border border-gold/50 bg-gold-light/40 p-4">
               <div className="smallcaps text-gold-dark">অ্যাপয়েন্টমেন্ট কার্ড</div>
               <p className="mt-1 text-[14.5px] text-ink-3">
-                কার্ডে আপনার নাম, ফোন, তারিখ-সময়, উদ্দেশ্য এবং দোকানে স্ক্যান করার QR থাকবে।
+                কার্ডে আপনার নাম, ফোন, তারিখ-সময়, উদ্দেশ্য এবং দোকানে স্ক্যান করার QR থাকবে। বাটনে ক্লিক করলেই PDF সরাসরি ডাউনলোড হবে — কোনো প্রিভিউ পেজে যাবে না।
               </p>
               <div className="mt-3 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
                 <Button asChild variant="gold" className="min-h-11">
-                  <Link href={`/book/${booking.id}/card?dl=1`}>
+                  <a href={`/api/v1/public/appointments/${booking.id}/card`} download>
                     <FileDown className="size-4" />
                     PDF ডাউনলোড করুন
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" className="min-h-11">
-                  <Link href={`/book/${booking.id}/card`}>কার্ড অনলাইনে দেখুন</Link>
+                  </a>
                 </Button>
               </div>
             </div>

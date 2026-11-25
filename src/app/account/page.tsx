@@ -95,7 +95,7 @@ export default async function AccountHome() {
             return (
               <li key={o.id} className="px-5 py-4">
                 <div className="flex flex-wrap items-baseline gap-3">
-                  <Link href={`/account/orders?id=${o.id}`} className="chalk-link num text-[17px] font-medium">
+                  <Link href={`/account/orders?id=${o.id}`} className="chalk-link code text-[17px] font-medium">
                     {o.orderNo}
                   </Link>
                   <span className="text-[15.5px]">{(byOrder.get(o.id) ?? []).join(", ")}</span>

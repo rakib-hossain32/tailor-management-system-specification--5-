@@ -101,7 +101,7 @@ export default async function InventoryPage({
                   const isLow = qty <= Number(f.reorderLevel);
                   return (
                     <TableRow key={f.id}>
-                      <TableCell className="num text-stone">{f.code}</TableCell>
+                      <TableCell className="code text-stone">{f.code}</TableCell>
                       <TableCell className="font-medium">{f.name}</TableCell>
                       <TableCell className="text-ink-3">
                         {TYPE_BN[f.type] ?? f.type}

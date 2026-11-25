@@ -232,7 +232,7 @@ export default async function MeasurementCardPage({
             <ul className="space-y-1">
               {orderList.map((o) => (
                 <li key={o.id} className="flex justify-between gap-2 border-b border-dotted border-stone/40 pb-0.5">
-                  <span className="num">{o.orderNo}</span>
+                  <span className="code">{o.orderNo}</span>
                   <span className="text-ink-3">{dateShort(o.orderDate)}</span>
                   <span className="num">৳{Number(o.total).toLocaleString("en-US")}</span>
                   <span className="text-[12px] text-stone">{o.status}</span>

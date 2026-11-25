@@ -84,7 +84,7 @@ export default async function AccountOrdersPage({
       {focus && (
         <section className="paper-card rise border-gold/60 p-5">
           <div className="flex flex-wrap items-baseline gap-3">
-            <span className="num text-[24px] font-semibold">{focus.orderNo}</span>
+            <span className="code text-[24px] font-semibold">{focus.orderNo}</span>
             <StatusBadge status={focus.status} size="md" />
             {focus.priority === "urgent" && (
               <span className="rounded-sm bg-chalk px-2 py-0.5 text-[12px] font-semibold text-paper">জরুরি</span>
@@ -171,7 +171,7 @@ export default async function AccountOrdersPage({
           return (
             <li key={o.id} className="paper-card p-5">
               <div className="flex flex-wrap items-baseline gap-3">
-                <span className="num text-[18px] font-medium">{o.orderNo}</span>
+                <span className="code text-[18px] font-medium">{o.orderNo}</span>
                 <StatusBadge status={o.status} />
                 <span className="text-[15.5px] text-ink-3">
                   {(itemsByOrder.get(o.id) ?? []).map((i) => `${i.g.nameBn} ×${i.oi.quantity}`).join(", ")}

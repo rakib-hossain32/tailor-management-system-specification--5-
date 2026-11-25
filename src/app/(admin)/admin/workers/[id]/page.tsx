@@ -161,7 +161,7 @@ export default async function WorkerDetailPage({ params }: { params: Promise<{ i
                   const late = isOverdue(orderStatus, delivery);
                   return (
                     <tr key={t.id} className="ledger-row">
-                      <td className="num px-4 py-3">
+                      <td className="code px-4 py-3">
                         <Link href={`/admin/orders/${orderId}`} className="chalk-link">
                           {orderNo.slice(-7)}
                         </Link>

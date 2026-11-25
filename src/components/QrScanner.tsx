@@ -20,11 +20,12 @@ function resolveQrTarget(raw: string): string | null {
   const text = (raw ?? "").trim();
   if (!text) return null;
 
-  // absolute or relative URL
+  // absolute or relative URL — staff targets only: the admin dashboard
+  // and the QR scan landing (/scan/<appointment id>).
   if (/^https?:\/\//i.test(text)) {
     try {
       const u = new URL(text);
-      if (u.pathname.startsWith("/admin/") || u.pathname.startsWith("/book/")) {
+      if (u.pathname.startsWith("/admin/") || u.pathname.startsWith("/scan/")) {
         return `${u.pathname}${u.search}`;
       }
       return null;
@@ -32,7 +33,7 @@ function resolveQrTarget(raw: string): string | null {
       return null;
     }
   }
-  if (text.startsWith("/admin/") || text.startsWith("/book/")) return text;
+  if (text.startsWith("/admin/") || text.startsWith("/scan/")) return text;
 
   // order number → search the order list
   if (/^TP-\d{4}-\d{4}$/i.test(text)) return `/admin/orders?q=${text.toUpperCase()}`;

@@ -95,7 +95,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
           </div>
 
           <div className="text-right">
-            <div className="num text-[26px] font-semibold tracking-tight">{o.orderNo}</div>
+            <div className="code text-[26px] font-semibold tracking-tight">{o.orderNo}</div>
             <div className="mt-1 text-[14.5px] text-ink-3">
               তারিখ: <span className="num">{dateShort(o.orderDate)}</span>
             </div>
@@ -115,7 +115,7 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
                 />
               ))}
             </div>
-            <div className="num text-[12px] text-stone">{trackingUrl}</div>
+            <div className="code text-[12px] text-stone">{trackingUrl}</div>
           </div>
         </header>
 

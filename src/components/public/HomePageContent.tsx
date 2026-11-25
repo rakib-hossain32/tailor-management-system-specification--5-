@@ -13,11 +13,11 @@ export function HomePageContent({ snapshot }: { snapshot: PublicSiteSnapshot }) 
   const page = snapshot.pages.home;
   const sections = page?.sections ?? [];
   return <>
-    <HomeHero section={homeSections(sections, "hero")[0]} title={page?.title || snapshot.shop.nameBn} intro={page?.intro || snapshot.shop.tagline} shop={snapshot.shop} />
+    <HomeHero section={homeSections(sections, "hero")[0]} title={page?.title || snapshot.shop.nameBn} intro={page?.intro || snapshot.shop.tagline} shop={snapshot.shop} garments={snapshot.garments} />
     <HomeStats sections={homeSections(sections, "statistic")} />
     <HomeTracking section={homeSections(sections, "tracking")[0]} />
     <HomeBenefits heading={headerFor(sections, "benefits")} sections={homeSections(sections, "benefit")} />
-    <HomeServices heading={headerFor(sections, "services")} sections={homeSections(sections, "service")} />
+    <HomeServices heading={headerFor(sections, "services")} sections={homeSections(sections, "service")} garments={snapshot.garments} />
     <HomeProcess heading={headerFor(sections, "process")} sections={homeSections(sections, "process")} />
     <HomeTestimonials heading={headerFor(sections, "testimonials")} sections={homeSections(sections, "testimonial")} />
     <HomeVisitCTA section={homeSections(sections, "cta")[0]} shop={snapshot.shop} />

@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/table";
 import { dateBn, isoDate, startOfToday } from "@/lib/format";
 import { createAppointment, setAppointmentStatus } from "../actions";
+import { garmentsByAppointment } from "@/server/services/appointment-garments";
 import { DateField } from "@/components/DateField";
 
 export const dynamic = "force-dynamic";
@@ -53,11 +54,19 @@ const TIME_SLOTS = Array.from({ length: 22 }, (_, i) => {
 export default async function AppointmentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string; ok?: string; error?: string }>;
+  searchParams: Promise<{ date?: string; ok?: string; error?: string; focus?: string }>;
 }) {
   await requireAdminPage();
   const sp = await searchParams;
   const date = sp.date && /^\d{4}-\d{2}-\d{2}$/.test(sp.date) ? sp.date : isoDate(startOfToday());
+
+  // QR scan target: /admin/appointments?focus=<id> — that appointment is
+  // loaded whatever day it belongs to and pinned, highlighted, at the top.
+  const focusRow =
+    sp.focus && /^[a-f\d-]{36}$/i.test(sp.focus)
+      ? (await db.select().from(appointments).where(eq(appointments.id, sp.focus)).limit(1))[0] ?? null
+      : null;
+  const focusGarments = focusRow ? await garmentsByAppointment([focusRow.id]) : null;
 
   const garmentRows = await db
     .select({ nameBn: garmentTypes.nameBn })
@@ -75,6 +84,8 @@ export default async function AppointmentsPage({
       ),
     )
     .orderBy(appointments.startsAt);
+
+  const garmentsMap = await garmentsByAppointment(rows.map((r) => r.id));
 
   const shift = (n: number) => {
     const d = new Date(`${date}T00:00:00`);
@@ -104,6 +115,38 @@ export default async function AppointmentsPage({
       {(sp.ok || sp.error) && (
         <Alert variant={sp.error ? "destructive" : "success"}>
           <AlertDescription>{sp.error ?? sp.ok}</AlertDescription>
+        </Alert>
+      )}
+
+      {focusRow && (
+        <Card className="border-2 border-gold bg-gold-light/30">
+          <CardHeader>
+            <CardTitle className="flex flex-wrap items-center gap-2.5">
+              QR স্ক্যান থেকে পাওয়া অ্যাপয়েন্টমেন্ট
+              <Badge variant={(STATUS[focusRow.status] ?? STATUS.booked).variant}>
+                {(STATUS[focusRow.status] ?? STATUS.booked).label}
+              </Badge>
+            </CardTitle>
+            <CardDescription>
+              {focusRow.name} · <span className="num">{focusRow.phone.replace("+88", "")}</span> ·{" "}
+              {dateBn(focusRow.startsAt)} · {timeLabel(new Date(focusRow.startsAt))} · {focusRow.purpose}
+              {(focusGarments?.get(focusRow.id)?.length ?? 0) > 0 &&
+                ` · বানাতে চান: ${(focusGarments?.get(focusRow.id) ?? []).join(", ")}`}
+              {focusRow.customerId && (
+                <>
+                  {" · "}
+                  <Link href={`/admin/customers/${focusRow.customerId}?tab=measurements`} className="chalk-link font-medium">
+                    কাস্টমারের মাপ ও অর্ডার খুলুন →
+                  </Link>
+                </>
+              )}
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      )}
+      {sp.focus && !focusRow && (
+        <Alert variant="destructive">
+          <AlertDescription>QR-এর অ্যাপয়েন্টমেন্টটি পাওয়া যায়নি — মুছে ফেলা হয়ে থাকতে পারে।</AlertDescription>
         </Alert>
       )}
 
@@ -175,9 +218,9 @@ export default async function AppointmentsPage({
                       </TableCell>
                       <TableCell className="text-ink-3">
                         {a.purpose}
-                        {a.garments?.length > 0 && (
+                        {(garmentsMap.get(a.id)?.length ?? 0) > 0 && (
                           <div className="mt-1 text-[13px] text-stone">
-                            বানাতে চান: {a.garments.join(", ")}
+                            বানাতে চান: {(garmentsMap.get(a.id) ?? []).join(", ")}
                           </div>
                         )}
                         {a.locationType === "home" && (

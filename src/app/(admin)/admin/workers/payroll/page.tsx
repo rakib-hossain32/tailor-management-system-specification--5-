@@ -12,21 +12,45 @@ export const dynamic = "force-dynamic";
 
 export default async function PayrollPage() {
   await requireAdminPage(true);
-  const rows = await db
+  // Aggregate tasks per worker in a subquery first: selecting every
+  // worker_details column while grouping only by its id is rejected by
+  // Postgres (a view has no primary key for functional dependency).
+  const totals = db
+    .select({
+      workerId: tasks.workerId,
+      total: sql<string>`coalesce(sum(${tasks.pieceRate}),0)`.as("total"),
+      earned: sql<string>`coalesce(sum(${tasks.pieceRate}) filter (where ${tasks.status} = 'qc_passed'),0)`.as("earned"),
+      pending: sql<string>`coalesce(sum(${tasks.pieceRate}) filter (where ${tasks.status} in ('assigned','in_progress','rework','done')),0)`.as("pending"),
+      passed: sql<number>`count(*) filter (where ${tasks.status} = 'qc_passed')::int`.as("passed"),
+      rework: sql<number>`count(*) filter (where ${tasks.status} = 'rework')::int`.as("rework"),
+      open: sql<number>`count(*) filter (where ${tasks.status} in ('assigned','in_progress','rework','done'))::int`.as("open"),
+    })
+    .from(tasks)
+    .groupBy(tasks.workerId)
+    .as("task_totals");
+  const rawRows = await db
     .select({
       w: viewFields(workers),
-      total: sql<string>`coalesce(sum(${tasks.pieceRate}),0)`,
-      earned: sql<string>`coalesce(sum(${tasks.pieceRate}) filter (where ${tasks.status} = 'qc_passed'),0)`,
-      pending: sql<string>`coalesce(sum(${tasks.pieceRate}) filter (where ${tasks.status} in ('assigned','in_progress','rework','done')),0)`,
-      passed: sql<number>`count(*) filter (where ${tasks.status} = 'qc_passed')::int`,
-      rework: sql<number>`count(*) filter (where ${tasks.status} = 'rework')::int`,
-      open: sql<number>`count(*) filter (where ${tasks.status} in ('assigned','in_progress','rework','done'))::int`,
+      total: totals.total,
+      earned: totals.earned,
+      pending: totals.pending,
+      passed: totals.passed,
+      rework: totals.rework,
+      open: totals.open,
     })
     .from(workers)
-    .leftJoin(tasks, eq(tasks.workerId, workers.id))
+    .leftJoin(totals, eq(totals.workerId, workers.id))
     .where(eq(workers.isActive, true))
-    .groupBy(workers.id)
     .orderBy(asc(workers.name));
+  const rows = rawRows.map((r) => ({
+    ...r,
+    total: r.total ?? "0",
+    earned: r.earned ?? "0",
+    pending: r.pending ?? "0",
+    passed: r.passed ?? 0,
+    rework: r.rework ?? 0,
+    open: r.open ?? 0,
+  }));
 
   const grandEarned = rows.reduce((s, r) => s + Number(r.earned), 0);
   const grandPending = rows.reduce((s, r) => s + Number(r.pending), 0);

@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useMutationError } from "@/components/feedback/FeedbackProvider";
 import { nextStatuses, statusMeta } from "@/lib/order-status";
+import { Button } from "@/components/ui/button";
 
 /** Compact status mover used on the kanban board. */
 export function QuickStatus({
   orderId,
   current,
   due,
-  compact = false,
 }: {
   orderId: string;
   current: string;
@@ -65,15 +65,9 @@ export function QuickStatus({
 
   if (!open) {
     return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className={`w-full rounded-sm border border-ink/25 px-2.5 py-1.5 text-[13.5px] transition-colors hover:bg-ink/5 ${
-          compact ? "" : ""
-        }`}
-      >
+      <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)} className="w-full">
         ধাপ বদলান →
-      </button>
+      </Button>
     );
   }
 
@@ -81,27 +75,21 @@ export function QuickStatus({
     <div className="space-y-1.5">
       <div className="flex flex-wrap gap-1.5">
         {options.map((to) => (
-          <button
+          <Button
             key={to}
             type="button"
+            size="sm"
             disabled={busy}
             onClick={() => move(to)}
-            className={`rounded-sm px-2.5 py-1.5 text-[13px] font-medium disabled:opacity-60 ${
-              to === "cancelled"
-                ? "border border-chalk/40 text-chalk hover:bg-chalk-light"
-                : "bg-ink text-paper hover:bg-ink-2"
-            }`}
+            variant={to === "cancelled" ? "outline" : "default"}
+            className={to === "cancelled" ? "border-chalk/40 text-chalk hover:bg-chalk-light" : ""}
           >
             {statusMeta(to).icon} {statusMeta(to).labelBn}
-          </button>
+          </Button>
         ))}
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="rounded-sm border border-ink/20 px-2 py-1.5 text-[13px] text-stone"
-        >
+        <Button type="button" size="sm" variant="outline" onClick={() => setOpen(false)}>
           বাতিল
-        </button>
+        </Button>
       </div>
       {error && <p className="text-[13px] text-chalk">{error}</p>}
     </div>
