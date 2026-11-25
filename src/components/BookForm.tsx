@@ -285,7 +285,7 @@ export function BookForm({
                         aria-pressed={active}
                         className="flex min-h-11 w-full items-center justify-start gap-3 rounded-md px-2.5 py-2 text-left text-base font-normal hover:bg-gold-light/50"
                       >
-                        <Checkbox checked={active} className="pointer-events-none" aria-hidden tabIndex={-1} />
+                        <span aria-hidden className={`flex size-4 shrink-0 items-center justify-center rounded-[4px] border ${active ? "border-gold-dark bg-gold text-ink" : "border-ink/40 bg-paper"}`}>{active && <Check className="size-3" />}</span>
                         <span className="flex-1">{garment.nameBn}</span>
                         {active && <Check className="size-4 shrink-0 text-gold-dark" />}
                       </Button>
@@ -368,14 +368,15 @@ export function BookForm({
 
       <Separator />
 
-      <label className="flex min-h-11 cursor-pointer items-center gap-2.5 text-[15px]">
+      <Label htmlFor="bk-home-visit" className="flex min-h-11 cursor-pointer items-center gap-2.5 text-[15px]">
         <Checkbox
+          id="bk-home-visit"
           checked={homeVisit}
           onCheckedChange={(v) => setHomeVisit(v === true)}
           aria-label="হোম ভিজিট"
         />
         হোম ভিজিটের অনুরোধ
-      </label>
+      </Label>
 
       {homeVisit && (
         <div className="space-y-1.5">

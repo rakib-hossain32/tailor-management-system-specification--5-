@@ -1,4 +1,5 @@
 import { getPinnedMeasurementSchemas } from "@/server/repositories/measurement-schema";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { viewFields } from "@/server/repositories/views";
 import { requireAdminPage } from "@/lib/page-auth";
 import Link from "next/link";
@@ -146,33 +147,33 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
 
         {/* items */}
         <section className="py-2">
-          <table className="w-full text-[14.5px]">
-            <thead>
-              <tr className="border-b border-ink text-left">
+          <Table className="w-full text-[14.5px]">
+            <TableHeader>
+              <TableRow className="border-b border-ink text-left">
                 {["#", "পোশাক", "মাপ (সংক্ষেপ)", "কাপড়", "পরিমাণ", "একক মূল্য", "মোট"].map((h) => (
-                  <th key={h} className="smallcaps py-2 pr-3 font-medium text-stone last:text-right">
+                  <TableHead key={h} className="smallcaps py-2 pr-3 font-medium text-stone last:text-right">
                     {h}
-                  </th>
+                  </TableHead>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {items.map(({ oi, g }, idx) => {
                 const set = oi.measurementSetId ? setById.get(oi.measurementSetId) : undefined;
                 const schema = (set ? schemaById.get(set.garmentSchemaVersionId)?.measurementSchema : g.measurementSchema) as unknown as MeasurementSchema;
                 const brief = flattenFields(schema).slice(0, 5);
                 const profile = oi.profileId ? profileById.get(oi.profileId) : undefined;
                 return (
-                  <tr key={oi.id} className="border-b border-dashed border-stone/50 align-top">
-                    <td className="num py-2.5 pr-3">{idx + 1}</td>
-                    <td className="py-2.5 pr-3">
+                  <TableRow key={oi.id} className="border-b border-dashed border-stone/50 align-top">
+                    <TableCell className="num py-2.5 pr-3">{idx + 1}</TableCell>
+                    <TableCell className="py-2.5 pr-3">
                       <span className="font-medium">{g.nameBn}</span>
                       {profile && <span className="block text-[13px] text-stone">মাপ: {profile.displayName}</span>}
                       {set && (
                         <span className="block text-[12.5px] text-stone">সংস্করণ v{set.version}</span>
                       )}
-                    </td>
-                    <td className="py-2.5 pr-3 text-[13.5px] text-ink-3">
+                    </TableCell>
+                    <TableCell className="py-2.5 pr-3 text-[13.5px] text-ink-3">
                       {set ? (
                         brief
                           .map((f) => `${f.label_bn} ${formatMeasurement((set.values as Record<string, number>)?.[f.key], "inch")}`)
@@ -180,21 +181,21 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
                       ) : (
                         "—"
                       )}
-                    </td>
-                    <td className="py-2.5 pr-3 text-[13.5px] text-ink-3">
+                    </TableCell>
+                    <TableCell className="py-2.5 pr-3 text-[13.5px] text-ink-3">
                       {oi.fabricSource === "customer" ? "কাস্টমারের" : "দোকানের"}
                       {Number(oi.fabricQty) > 0 && <span className="num"> · {Number(oi.fabricQty)} গজ</span>}
-                    </td>
-                    <td className="num py-2.5 pr-3">{oi.quantity}</td>
-                    <td className="num py-2.5 pr-3">{Number(oi.unitPrice).toLocaleString("en-US")}</td>
-                    <td className="num py-2.5 text-right font-medium">
+                    </TableCell>
+                    <TableCell className="num py-2.5 pr-3">{oi.quantity}</TableCell>
+                    <TableCell className="num py-2.5 pr-3">{Number(oi.unitPrice).toLocaleString("en-US")}</TableCell>
+                    <TableCell className="num py-2.5 text-right font-medium">
                       {(oi.quantity * Number(oi.unitPrice)).toLocaleString("en-US")}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </section>
 
         {/* totals + payments */}

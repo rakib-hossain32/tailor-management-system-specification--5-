@@ -33,10 +33,36 @@
        renders in one face end to end.
      - IBM Plex Mono ONLY for English/Latin data via .code — order
        numbers (TP-…) and other Latin alphanumeric codes. */
-  --font-display: "Hind Siliguri", "Noto Sans Bengali", system-ui, sans-serif;
-  --font-sans: "Hind Siliguri", "Noto Sans Bengali", system-ui, sans-serif;
+  --font-display: "Tiro Digits", "Hind Siliguri", "Noto Sans Bengali", system-ui, sans-serif;
+  --font-sans: "Tiro Digits", "Hind Siliguri", "Noto Sans Bengali", system-ui, sans-serif;
   --font-num: "Tiro Bangla", "Hind Siliguri", "Noto Sans Bengali", serif;
   --font-mono: "IBM Plex Mono", "Hind Siliguri", "Noto Sans Bengali", ui-monospace, monospace;
+}
+
+/* "Tiro Digits" — a digits-only face carved out of Tiro Bangla via
+   unicode-range. It sits FIRST in the --font-sans / --font-display
+   stacks above, so every Bengali or Latin digit anywhere on the site —
+   dates inside sentences, prices in tables, phone numbers, CMS text,
+   text nobody remembered to wrap in .num — renders in Tiro Bangla,
+   while letters fall through to Hind Siliguri. This is what makes the
+   three-font rule hold on every page by construction, not by hoping
+   each value was wrapped by hand. (.code / --font-mono deliberately
+   does NOT include it: Latin codes keep IBM Plex Mono digits.) */
+@font-face {
+  font-family: "Tiro Digits";
+  src: url("https://fonts.gstatic.com/s/tirobangla/v8/IFSgHe1Tm95E3O8b5i2V8PGo80Luuw.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+09E6-09EF, U+09F3-09FA;
+}
+@font-face {
+  font-family: "Tiro Digits";
+  src: url("https://fonts.gstatic.com/s/tirobangla/v8/IFSgHe1Tm95E3O8b5i2V8PG680I.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0030-0039;
 }
 
 @layer base {

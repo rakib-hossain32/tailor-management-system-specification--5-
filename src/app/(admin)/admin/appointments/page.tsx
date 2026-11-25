@@ -315,10 +315,10 @@ export default async function AppointmentsPage({
                   <p className="text-xs text-stone">একাধিক বেছে নেওয়া যাবে — তালিকাটি “ব্যবস্থাপনা → পোশাক ও মাপ” থেকে আসে।</p>
                   <div className="flex flex-wrap gap-2 pt-1">
                     {garmentRows.map((g, gi) => (
-                      <label key={g.nameBn} htmlFor={`gm-${gi}`} className="flex cursor-pointer items-center gap-1.5 rounded-full border border-ink/15 px-3 py-1.5 text-sm has-[[data-state=checked]]:border-gold has-[[data-state=checked]]:bg-gold-light/50">
+                      <Label key={g.nameBn} htmlFor={`gm-${gi}`} className="flex cursor-pointer items-center gap-1.5 rounded-full border border-ink/15 px-3 py-1.5 text-sm has-[[data-state=checked]]:border-gold has-[[data-state=checked]]:bg-gold-light/50">
                         <Checkbox id={`gm-${gi}`} name="garments" value={g.nameBn} className="size-3.5" />
                         {g.nameBn}
-                      </label>
+                      </Label>
                     ))}
                   </div>
                 </fieldset>

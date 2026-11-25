@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { FaqItem } from "./FaqItem";
 import type { PublicSiteSnapshot } from "@/server/cms/types";
 import { asList, asRecord, asText } from "./home/content";
 
@@ -39,7 +40,7 @@ export function ContentSections({ sections }: { sections: Section[] }) {
     {[...sections].sort((a, b) => a.position - b.position).map((section) => {
       const data = asRecord(section.data);
       if (data.sectionHeader === true) return <SectionHeading key={section.id} section={section} />;
-      if (section.kind === "faq") return <details key={section.id} className="paper-card p-5"><summary className="cursor-pointer text-lg font-medium">{section.heading}</summary><p className="mt-3 whitespace-pre-line text-[15px] leading-relaxed text-ink-3">{section.body}</p></details>;
+      if (section.kind === "faq") return <FaqItem key={section.id} heading={section.heading} body={section.body} />;
       if (section.kind === "statistic") return <article key={section.id} className="paper-card p-5"><div className="num text-[30px] font-semibold text-gold-dark">{section.label}</div><h2 className="mt-1 text-[18px]">{section.heading}</h2>{section.body && <p className="mt-2 text-sm text-ink-3">{section.body}</p>}</article>;
       return <SectionCard key={section.id} section={section} />;
     })}

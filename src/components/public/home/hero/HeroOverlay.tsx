@@ -61,7 +61,7 @@ export function HeroOverlay({
           <dl className="mt-12 grid grid-cols-3 gap-4 border-t border-white/15 pt-6 sm:gap-10">
             {promises.slice(0, 3).map((promise, index) => (
               <div key={index} className="min-w-0">
-                <dd className="truncate text-xl font-semibold leading-none text-white sm:text-[26px]">
+                <dd className="num truncate text-xl font-semibold leading-none text-white sm:text-[26px]">
                   {asText(promise.value)}
                 </dd>
                 <dt className="mt-2 truncate text-[12px] leading-snug text-white/65 sm:text-[13px]">

@@ -166,7 +166,7 @@ export function GarmentDiagram({
             textAnchor="end"
             fill="#B23A2E"
             fontSize="11"
-            fontFamily="'Hind Siliguri', sans-serif"
+            fontFamily="'Tiro Digits', 'Hind Siliguri', sans-serif"
           >
             {active.label}
           </text>
