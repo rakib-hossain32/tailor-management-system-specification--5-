@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { headers } from "next/headers";
 import { apiErrorResponse } from "@/lib/api-route";
 import { buildAppointmentCardPdf } from "@/server/pdf/appointment-card";
 
@@ -16,10 +15,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const h = await headers();
-    const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
-    const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-    const result = await buildAppointmentCardPdf(id, `${proto}://${host}`);
+    const result = await buildAppointmentCardPdf(id);
     if (!result) {
       return NextResponse.json(
         { error: { code: "NOT_FOUND", message: "অ্যাপয়েন্টমেন্ট পাওয়া যায়নি" } },

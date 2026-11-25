@@ -61,7 +61,7 @@ export default async function AppointmentsPage({
   const sp = await searchParams;
   const date = sp.date && /^\d{4}-\d{2}-\d{2}$/.test(sp.date) ? sp.date : isoDate(startOfToday());
 
-  // QR scan target: /admin/appointments?focus=<id> — that appointment is
+  // Scan target: /admin/appointments?focus=<id> — that appointment is
   // loaded whatever day it belongs to and pinned, highlighted, at the top.
   const focusRow =
     sp.focus && /^[a-f\d-]{36}$/i.test(sp.focus)
@@ -123,7 +123,7 @@ export default async function AppointmentsPage({
         <Card className="border-2 border-gold bg-gold-light/30">
           <CardHeader>
             <CardTitle className="flex flex-wrap items-center gap-2.5">
-              QR স্ক্যান থেকে পাওয়া অ্যাপয়েন্টমেন্ট
+              স্ক্যান থেকে পাওয়া অ্যাপয়েন্টমেন্ট
               <Badge variant={(STATUS[focusRow.status] ?? STATUS.booked).variant}>
                 {(STATUS[focusRow.status] ?? STATUS.booked).label}
               </Badge>

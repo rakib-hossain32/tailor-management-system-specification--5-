@@ -6,7 +6,7 @@ import { db } from "@/db";
 import { customers, orderItems, orders, garmentTypes } from "@/db/schema";
 import { StatusBadge, DueBadge, UrgentBadge } from "@/components/StatusBadge";
 import { Pagination } from "@/components/admin/Pagination";
-import { QrScanner } from "@/components/QrScanner";
+import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { PageHead } from "@/components/admin/PageHead";
 import { PageGuide } from "@/components/admin/PageGuide";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -110,7 +110,7 @@ export default async function OrdersPage({
         sub={`প্রতি পৃষ্ঠায় ${PAGE_SIZE}টি অর্ডার — মোট ${filtered.length}টি পাওয়া গেছে।`}
         actions={
           <>
-            <QrScanner />
+            <BarcodeScanner />
             <Button asChild size="lg">
               <Link href="/admin/orders/new">+ নতুন অর্ডার</Link>
             </Button>
@@ -121,7 +121,7 @@ export default async function OrdersPage({
       <PageGuide
         items={[
           ["সব অর্ডার এক জায়গায়", "স্ট্যাটাস ট্যাব আর খোঁজ দিয়ে যেকোনো অর্ডার বের করুন — অর্ডার নম্বর, কাস্টমারের নাম বা ফোন দিয়ে।"],
-          ["QR স্ক্যানে সরাসরি অর্ডার", "কাস্টমারের কার্ডের QR স্ক্যান করলেই তার মাপ ও অর্ডার খুলে যাবে — উপরের স্ক্যান বাটনটি ব্যবহার করুন।"],
+          ["বারকোড স্ক্যানে সরাসরি অর্ডার", "কাস্টমারের কার্ডের বারকোড স্ক্যান করলেই তার মাপ ও অর্ডার খুলে যাবে — উপরের স্ক্যান বাটনটি ব্যবহার করুন।"],
           ["অর্ডারে ক্লিক = বিস্তারিত", "স্ট্যাটাস বদল, পেমেন্ট নেওয়া, ইনভয়েস প্রিন্ট — সব কাজ অর্ডারের নিজের পেজে।"],
         ]}
       />

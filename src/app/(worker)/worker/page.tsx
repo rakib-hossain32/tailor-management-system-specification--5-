@@ -19,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { dateShort, daysUntil, relativeDay } from "@/lib/format";
 import { isOverdue } from "@/lib/order-status";
 import { moveTask } from "@/app/(admin)/admin/actions";
-import { QrScanner } from "@/components/QrScanner";
+import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { redirect } from "next/navigation";
 import { getStaffSession } from "@/lib/access";
 
@@ -125,7 +125,7 @@ export default async function WorkerHome({
                 {active.skillTags.length > 0 && ` · ${active.skillTags.join(", ")}`}
               </p>
             </div>
-            <QrScanner />
+            <BarcodeScanner />
 
                         {session?.workerId ? (
               <div className="w-full sm:w-auto">

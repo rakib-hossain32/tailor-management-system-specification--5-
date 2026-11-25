@@ -421,7 +421,7 @@ export function BookForm({
             <div className="mt-3 rounded-md border border-gold/50 bg-gold-light/40 p-4">
               <div className="smallcaps text-gold-dark">অ্যাপয়েন্টমেন্ট কার্ড</div>
               <p className="mt-1 text-[14.5px] text-ink-3">
-                কার্ডে আপনার নাম, ফোন, তারিখ-সময়, উদ্দেশ্য এবং দোকানে স্ক্যান করার QR থাকবে। বাটনে ক্লিক করলেই PDF সরাসরি ডাউনলোড হবে — কোনো প্রিভিউ পেজে যাবে না।
+                কার্ডে আপনার নাম, ফোন, তারিখ-সময়, উদ্দেশ্য এবং দোকানে স্ক্যান করার বারকোড থাকবে। বাটনে ক্লিক করলেই PDF সরাসরি ডাউনলোড হবে — কোনো প্রিভিউ পেজে যাবে না।
               </p>
               <div className="mt-3 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
                 <Button asChild variant="gold" className="min-h-11">

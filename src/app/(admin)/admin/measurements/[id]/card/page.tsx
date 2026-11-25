@@ -3,9 +3,9 @@ import { viewFields } from "@/server/repositories/views";
 import { requireAdminPage } from "@/lib/page-auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { headers } from "next/headers";
 import { asc, desc as descOrd, eq } from "drizzle-orm";
-import QRCode from "qrcode";
+import * as bwipjs from "bwip-js/node";
+import { recordCode, formatRecordCode } from "@/lib/barcode";
 import { db } from "@/db";
 import {
   customers,
@@ -79,18 +79,21 @@ export default async function MeasurementCardPage({
   const styles = (s.styles ?? {}) as Record<string, string>;
   const values = (s.values ?? {}) as Record<string, number>;
 
-  // QR → this card (shop scans it to open the full record instantly)
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
-  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  // scanning takes the shop to this customer's measurement + order hub
-  const cardUrl = `${proto}://${host}/admin/customers/${c.id}?tab=measurements`;
-  const qr = await QRCode.toDataURL(cardUrl, {
-    margin: 1,
-    width: 220,
-    errorCorrectionLevel: "M",
-    color: { dark: "#142033", light: "#FFFCF6" },
+  // Barcode → this customer's record. The card prints ONLY a 12-digit
+  // number (lib/barcode) — no URL on paper for anyone to photograph.
+  // Staff scan it with the in-app barcode scanner and the customer hub
+  // opens inside their staff session.
+  const custCode = recordCode(c.id);
+  const barcodePng = await bwipjs.toBuffer({
+    bcid: "code128",
+    text: custCode,
+    scale: 5,
+    height: 10,
+    includetext: false,
+    backgroundcolor: "FFFFFF",
+    barcolor: "000000",
   });
+  const barcode = `data:image/png;base64,${barcodePng.toString("base64")}`;
 
   const orderList = recentOrders.map((r) => r.o);
 
@@ -115,7 +118,7 @@ export default async function MeasurementCardPage({
 
       <p className="no-print rounded-md border border-gold/50 bg-gold-light/45 px-4 py-2.5 text-[14.5px] text-gold-dark">
         প্রিন্ট ডায়ালগে “Save as PDF” বেছে নিলে কার্ড-আকৃতির PDF হবে (প্রস্থ ১৫০ মিমি, তথ্য বেশি
-        হলে উচ্চতা বড় হয়)। QR স্ক্যান করলে দোকানের সিস্টেমে এই মাপের পূর্ণ রেকর্ড খুলবে।
+        হলে উচ্চতা বড় হয়)। বারকোড স্ক্যান করলে দোকানের সিস্টেমে এই মাপের পূর্ণ রেকর্ড খুলবে।
       </p>
 
       <style
@@ -242,11 +245,11 @@ export default async function MeasurementCardPage({
           )}
         </section>
 
-        {/* QR + footer */}
+        {/* Barcode + footer */}
         <footer className="mt-1 flex items-end justify-between gap-3 border-t-2 border-ink pt-3">
           <div className="min-w-0">
-            <div className="smallcaps text-stone">স্ক্যান করে রেকর্ড খুলুন</div>
-            <p className="mt-1 break-all text-[10.5px] leading-tight text-ink-3">{cardUrl}</p>
+            <div className="smallcaps text-stone">বারকোড স্ক্যান করে রেকর্ড খুলুন</div>
+            <p className="code mt-1 text-[12px] leading-tight text-ink-3">{formatRecordCode(custCode)}</p>
             <p className="mt-2 text-[11.5px] text-stone">
               মাস্টারের স্বাক্ষর: ________________ · তারিখ: {dateBn(s.measuredAt)}
             </p>
@@ -256,11 +259,11 @@ export default async function MeasurementCardPage({
           </div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={qr}
-            alt="মাপ কার্ড QR"
-            width={104}
-            height={104}
-            className="shrink-0 border border-ink/20 bg-white"
+            src={barcode}
+            alt="মাপ কার্ড বারকোড"
+            width={190}
+            height={54}
+            className="shrink-0 bg-white"
             style={{ printColorAdjust: "exact", WebkitPrintColorAdjust: "exact" }}
           />
         </footer>

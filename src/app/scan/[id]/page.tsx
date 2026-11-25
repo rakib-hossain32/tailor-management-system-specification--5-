@@ -9,43 +9,36 @@ import { isAdminRole } from "@/lib/auth";
 import { dateBn, formatPhone, taka } from "@/lib/format";
 import { statusMeta } from "@/lib/order-status";
 import { garmentsByAppointment } from "@/server/services/appointment-garments";
-import { verifyScanToken } from "@/lib/scan-token";
 import { takeRateLimit } from "@/lib/rate-limit";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "QR স্ক্যান" };
+export const metadata = { title: "বারকোড স্ক্যান" };
 
 /**
- * Staff scan landing — the ONE target of the appointment-card QR code.
+ * Staff scan landing — where the barcode scanner lands after resolving
+ * a printed card's 12-digit number (lib/barcode) to an appointment.
  *
- * The customer hands the printed/PDF card to the shop; any logged-in
- * staff member (admin OR worker) who scans it lands here, inside the
- * staff area, and sees the appointment plus the customer's orders.
- * Admins jump straight to the full order / customer hub; workers see
- * their own tasks for those orders. Workers never see phone numbers or
- * money here, matching the rest of the worker view. There is NO public
- * card page anywhere — without a staff login this page shows nothing.
+ * The card itself carries NO URL and NO token — just a number that is
+ * meaningless off paper. This page therefore relies on the two layers
+ * that remain: a per-IP rate limit against probing, and a required
+ * staff session (admin OR worker) before any data is shown. Admins see
+ * the appointment plus the customer's orders with links onward;
+ * workers see the appointment and their own tasks only — never phone
+ * numbers or money, matching the rest of the worker view. Without a
+ * staff login this page shows nothing but a login notice.
  */
 export default async function ScanPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ t?: string }>;
 }) {
   const { id } = await params;
   if (!/^[a-f\d-]{36}$/i.test(id)) notFound();
 
-  // Layer 1 — the QR carries an HMAC-signed token (see lib/scan-token).
-  // A guessed, scripted or tampered link gets a plain 404: it does not
-  // even learn that a scan page exists here.
-  const { t } = await searchParams;
-  if (!verifyScanToken(id, t)) notFound();
-
-  // Layer 2 — rate limit per client, so automated probing is throttled.
+  // Layer 1 — rate limit per client, so automated probing is throttled.
   const ip = ((await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "local").slice(0, 100);
   if (!takeRateLimit(`scan:ip:${ip}`, 60, 10 * 60_000)) {
     return (
@@ -60,7 +53,7 @@ export default async function ScanPage({
     );
   }
 
-  // Layer 3 — a staff session is required before any data is shown.
+  // Layer 2 — a staff session is required before any data is shown.
   const session = await getStaffSession();
   if (!session) {
     return (
@@ -69,7 +62,7 @@ export default async function ScanPage({
           <CardHeader>
             <CardTitle>স্টাফ লগইন প্রয়োজন</CardTitle>
             <CardDescription>
-              এই QR কোড শুধু দোকানের স্টাফদের জন্য। লগইন করার পর আবার স্ক্যান করলেই অ্যাপয়েন্টমেন্ট ও
+              এই বারকোড শুধু দোকানের স্টাফদের জন্য। লগইন করার পর আবার স্ক্যান করলেই অ্যাপয়েন্টমেন্ট ও
               অর্ডারের তথ্য এখানে খুলবে।
             </CardDescription>
           </CardHeader>
@@ -129,7 +122,7 @@ export default async function ScanPage({
   return (
     <main className="mx-auto max-w-3xl space-y-5 px-4 py-8 sm:px-6">
       <div className="flex items-center justify-between gap-3">
-        <div className="smallcaps text-stone">QR স্ক্যান · স্টাফ ভিউ</div>
+        <div className="smallcaps text-stone">বারকোড স্ক্যান · স্টাফ ভিউ</div>
         <Button asChild variant="outline" size="sm">
           <Link href={admin ? "/admin" : "/worker"}>{admin ? "ড্যাশবোর্ডে যান" : "আমার কাজে যান"}</Link>
         </Button>

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { and, asc, eq, gte, inArray, lt } from "drizzle-orm";
 import { Sparkles, Scissors, CheckCircle2, Clock, Users } from "lucide-react";
 import { QuickActions } from "@/components/QuickActions";
-import { QrScanner } from "@/components/QrScanner";
+import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { db } from "@/db";
 import {
   appointments,
@@ -205,7 +205,7 @@ export default async function DashboardPage({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
-          <QrScanner />
+          <BarcodeScanner />
           <Button asChild size="default">
             <Link href="/admin/orders/new">+ নতুন অর্ডার</Link>
           </Button>
